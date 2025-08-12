@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MyRoute</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MapLibre GL JS -->
+    <script src='https://unpkg.com/maplibre-gl@4.1.0/dist/maplibre-gl.js'></script>
+    <link href='https://unpkg.com/maplibre-gl@4.1.0/dist/maplibre-gl.css' rel='stylesheet' />
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Hoja de estilos local -->
+    <link rel="stylesheet" href="myroute.css">
+</head>
+<body class="overflow-hidden h-screen flex flex-col">
+
+    <!-- Contenedor del Mapa -->
+    <div id="map-container" class="flex-grow relative">
+        <div id="map"></div>
+        <div id="status-overlay" class="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-20">
+            <p id="status-text" class="text-white text-lg">Iniciando y obteniendo ubicación...</p>
+        </div>
+    </div>
+
+    <!-- Reloj -->
+    <div id="clock-display" class="absolute top-4 left-4 z-10 p-2 rounded-lg shadow-lg font-mono text-lg" style="background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px); color: var(--text-primary);">
+        --:--:--
+    </div>
+
+    <!-- Panel de Estadísticas de Ruta Guardada -->
+    <div id="route-stats-panel" class="hidden absolute top-0 left-0 right-0 p-4 bg-black bg-opacity-70 backdrop-blur-sm z-10">
+        <h3 id="stats-panel-name" class="text-lg font-bold text-white text-center truncate">Nombre de la Ruta</h3>
+        <div class="flex justify-around mt-2 text-center">
+            <div>
+                <p id="stats-panel-dist" class="text-xl font-semibold text-white">0.00</p>
+                <p class="text-xs text-neutral-400">Distancia (km)</p>
+            </div>
+            <div>
+                <p id="stats-panel-time" class="text-xl font-semibold text-white">00:00:00</p>
+                <p class="text-xs text-neutral-400">Duración</p>
+            </div>
+            <div>
+                <p id="stats-panel-date" class="text-xl font-semibold text-white">--/--/----</p>
+                <p class="text-xs text-neutral-400">Fecha</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controles Inferiores -->
+    <div class="absolute bottom-4 right-4 z-10">
+        <div id="controls-container" class="flex items-center gap-4 p-3 rounded-full shadow-2xl" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);">
+            <button id="menu-btn" class="btn p-3 rounded-full" style="background-color: var(--light-bg); color: var(--text-primary);"><i class="ph ph-list text-2xl"></i></button>
+            <div id="stats-display" class="hidden items-center gap-4 pr-4" style="color: var(--text-primary);">
+                <div class="text-center">
+                    <p id="stat-distance" class="font-bold text-lg">0.00</p>
+                    <p class="text-xs" style="color: var(--text-secondary);">km</p>
+                </div>
+                <div class="text-center">
+                    <p id="stat-time" class="font-bold text-lg">00:00</p>
+                    <p class="text-xs" style="color: var(--text-secondary);">Tiempo</p>
+                </div>
+            </div>
+            <button id="record-btn" class="btn w-16 h-16 rounded-full flex items-center justify-center shadow-lg" style="background-color: var(--brand-color); color: var(--bg-primary);">
+                <i id="record-icon" class="ph ph-play text-4xl"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Controles Superiores Derechos -->
+    <div class="absolute top-4 right-4 z-10 flex flex-col gap-2">
+         <button id="recenter-btn" class="btn p-3 rounded-full shadow-lg" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);"><i class="ph ph-crosshair text-2xl"></i></button>
+    </div>
+    
+    <!-- Botón para Volver al Rastreo -->
+    <button id="back-to-tracking-btn" class="hidden absolute top-20 left-4 z-10 btn p-3 rounded-full shadow-lg" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
+        <i class="ph ph-arrow-left text-2xl"></i>
+    </button>
+    
+    <!-- Botón para Volver al Hub Principal -->
+    <a href="index.html" class="absolute bottom-4 left-4 z-10 btn p-3 rounded-full shadow-lg" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary);">
+        <i class="ph ph-arrow-u-up-left text-2xl"></i>
+    </a>
+
+
+    <!-- Panel Lateral -->
+    <div id="side-panel" class="hidden side-panel fixed top-0 right-0 h-full w-full max-w-sm z-30 shadow-2xl p-4 flex flex-col" style="background-color: var(--bg-primary); border-left: 1px solid var(--border-color);">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Mis Rutas</h2>
+            <button id="close-panel-btn" class="p-2"><i class="ph ph-x text-2xl"></i></button>
+        </div>
+        <div id="saved-routes-list" class="flex-grow overflow-y-auto mb-4"></div>
+        
+        <!-- Sección de Ajustes -->
+        <div class="border-t pt-4" style="border-color: var(--border-color);">
+            <h3 class="text-lg font-bold mb-3">Ajustes</h3>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm mb-2" style="color: var(--text-secondary);">Tema de la aplicación</p>
+                    <div id="theme-selector" class="flex gap-2">
+                        <button data-theme="dark" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Oscuro</button>
+                        <button data-theme="light" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Claro</button>
+                        <button data-theme="black" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Negro</button>
+                    </div>
+                </div>
+                
+                <!-- Grupo de Gestión de Rutas -->
+                <div>
+                    <p class="text-sm mb-2" style="color: var(--text-secondary);">Gestión de Rutas</p>
+                    <div class="flex gap-2">
+                        <button id="export-routes-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Exportar Rutas</button>
+                        <button id="import-routes-btn" class="theme-btn flex-1 py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Importar Rutas</button>
+                    </div>
+                </div>
+
+                <!-- Grupo de Mapa Offline -->
+                <div>
+                    <p class="text-sm mb-2" style="color: var(--text-secondary);">Mapa Offline</p>
+                    <button id="download-map-btn" class="theme-btn w-full py-2 rounded-lg text-sm" style="background-color: var(--light-bg);">Descargar Mapa (50x50km)</button>
+                    <p id="offline-mode-indicator" class="hidden text-xs text-center mt-2" style="color: var(--secondary-color);">
+                        Modo offline activado. Para salir, reinicia la aplicación.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Guardar Ruta -->
+    <div id="save-modal" class="modal fixed inset-0 bg-black bg-opacity-60 z-40 flex items-center justify-center p-4">
+        <div class="rounded-2xl p-6 w-full max-w-sm shadow-xl" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);">
+            <h2 class="text-xl font-bold text-center mb-2">Guardar Ruta</h2>
+            <p class="text-center mb-4" style="color: var(--text-secondary);">Dale un nombre a tu aventura.</p>
+            <input type="text" id="route-name-input" class="w-full border-2 border-transparent rounded-lg p-3 mb-6 outline-none" style="background-color: var(--light-bg); color: var(--text-primary); --tw-ring-color: var(--brand-color);" placeholder="Ruta nocturna">
+            <div class="flex gap-4">
+                <button id="discard-btn" class="btn w-full font-bold py-3 px-4 rounded-lg" style="background-color: var(--light-bg); color: var(--text-primary);">Descartar</button>
+                <button id="save-route-btn" class="btn w-full font-bold py-3 px-4 rounded-lg" style="background-color: var(--brand-color); color: var(--bg-primary);">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input oculto para importar archivos -->
+    <input type="file" id="import-file-input" class="hidden" accept=".json">
+
+    <!-- Script principal como módulo -->
+    <script type="module" src="myroute.js"></script>
+</body>
+</html>

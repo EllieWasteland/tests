@@ -6,7 +6,7 @@
     <title>Vitreum Hub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
     
     <style>
         /* --- VARIABLES Y ESTILOS GLOBALES --- */
@@ -17,7 +17,7 @@
             --text-color-secondary: #a0a0b0;
             --accent-color: #ffc966;
             --dark-bg: #1e1e28;
-            --font-family-sans: 'Poppins', sans-serif;
+            --font-family-sans: 'Nunito', sans-serif;
             --font-family-mono: 'Roboto Mono', monospace;
             --blur-amount: 22px;
             --log-success: #4ade80;
@@ -34,7 +34,8 @@
             background: url('https://images.unsplash.com/photo-1522441815192-d9f04eb0615c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover;
             position: absolute;
             inset: 0;
-            transition: opacity 0.6s ease-out, visibility 0.6s;
+            transition: opacity 0.6s ease-out, visibility 0.6s, background-image 0.8s ease;
+            background-attachment: fixed;
         }
 
         #splash-screen { position: fixed; inset: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.6s ease-out; overflow: hidden; background: #000; }
@@ -59,7 +60,8 @@
         @keyframes wave-scan { from { left: -2%; opacity: 1; } to { left: 102%; opacity: 1; } }
 
         /* --- WIDGET GENERAL --- */
-        .widget { background: var(--bg-color); backdrop-filter: blur(var(--blur-amount)); -webkit-backdrop-filter: blur(var(--blur-amount)); border: 1px solid var(--border-color); padding: 25px; border-radius: 25px; display: flex; flex-direction: column; }
+        .widget { background: var(--bg-color); backdrop-filter: blur(var(--blur-amount)); -webkit-backdrop-filter: blur(var(--blur-amount)); border: 1px solid var(--border-color); padding: 25px; border-radius: 25px; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .widget:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25); }
 
         /* --- ONBOARDING --- */
         #onboarding-screen .onboarding-card { width: 450px; text-align: center; display: none; gap: 20px; padding: 30px; }
@@ -70,13 +72,13 @@
         .onboarding-card p { color: var(--text-color-secondary); line-height: 1.6; }
         .disclaimer-text { font-size: 0.9rem; }
         .onboarding-actions { margin-top: 20px; display: flex; gap: 15px; width: 100%; justify-content: center; }
-        .onboarding-btn { border: none; padding: 12px 30px; border-radius: 50px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; width: 100%; }
+        .onboarding-btn { border: none; padding: 12px 30px; border-radius: 50px; font-family: var(--font-family-sans); font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; width: 100%; }
         .onboarding-btn.primary { background-color: var(--accent-color); color: #111; }
         .onboarding-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(255, 201, 102, 0.2); }
         .onboarding-btn.secondary { background-color: rgba(255, 255, 255, 0.1); color: var(--text-color); }
         .onboarding-btn.secondary:hover { background-color: rgba(255, 255, 255, 0.2); }
 
-        /* --- LOGIN (REDiseñado) --- */
+        /* --- LOGIN & MODAL DE ERROR --- */
         #login-screen { overflow: hidden; }
         .login-art-container { position: absolute; inset: 0; z-index: 0; }
         .login-art-shape { position: absolute; border-radius: 50%; filter: blur(150px); }
@@ -88,11 +90,17 @@
         .login-logo { font-size: 2.5rem; font-weight: 700; letter-spacing: 0.3rem; margin-bottom: 10px; }
         .login-container h2 { font-weight: 500; color: var(--text-color); margin-bottom: 10px; }
         .login-container p { color: var(--text-color-secondary); margin-bottom: 30px; }
-        .google-login-btn { display: inline-flex; align-items: center; justify-content: center; gap: 15px; padding: 12px 30px; border: none; border-radius: 50px; background-color: #fff; color: #333; font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .google-login-btn { display: inline-flex; align-items: center; justify-content: center; gap: 15px; padding: 12px 30px; border: none; border-radius: 50px; background-color: #fff; color: #333; font-family: var(--font-family-sans); font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .google-login-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
         .google-login-btn svg { width: 22px; height: 22px; }
-        .error-message { color: var(--error-color); visibility: hidden; height: 1em; font-size: 0.9rem; margin-top: 15px; transition: visibility 0.2s; }
-        .error-message.show { visibility: visible; }
+        
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-content { background: var(--dark-bg); color: var(--text-color); padding: 30px; border-radius: 20px; text-align: center; width: 90%; max-width: 400px; border: 1px solid var(--border-color); transform: scale(0.95); transition: transform 0.3s ease; }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+        .modal-content h3 { margin-bottom: 15px; font-size: 1.5rem; }
+        .modal-content p { color: var(--text-color-secondary); margin-bottom: 25px; line-height: 1.6; }
+        .modal-btn { border: none; padding: 12px 30px; border-radius: 50px; font-family: var(--font-family-sans); font-weight: 600; font-size: 1rem; cursor: pointer; width: 100%; background-color: var(--accent-color); color: #111; }
 
         /* --- SETUP SCREEN --- */
         .setup-container { width: 480px; text-align: center; gap: 20px; }
@@ -117,19 +125,28 @@
         .top-nav .nav-link { display: flex; align-items: center; gap: 8px; padding: 10px 25px; text-decoration: none; color: var(--text-color-secondary); font-weight: 500; border-radius: 50px; transition: all 0.3s ease; }
         .top-nav .nav-link i { width: 18px; }
         .top-nav .nav-link.active { color: #111; background: var(--text-color); font-weight: 600; }
-        .main-container { position: relative; width: 100%; height: 100vh; max-width: 1600px; max-height: 900px; padding-top: 90px; margin: 0 auto; }
-        .page-content { display: none; width: 100%; height: calc(100% - 90px); position: absolute; top: 90px; left: 0; padding: 20px 50px; overflow-y: auto; }
+        .main-container { position: relative; width: 100%; height: 100vh; max-width: 1600px; max-height: 900px; margin: 0 auto; }
+        .page-content { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; padding: 90px 50px 20px 50px; overflow-y: auto; }
         .page-content.active { display: block; }
+        
+        .content-holder {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            padding: 25px;
+        }
+        .page-title { font-size: 2rem; font-weight: 700; margin-bottom: 25px; }
 
-        /* --- GRIDS Y WIDGETS (Restaurados) --- */
-        .dashboard-grid { display: grid; grid-template-columns: 320px 1fr 400px; grid-template-rows: auto 1fr; gap: 25px; height: 100%; }
+        /* --- GRIDS Y WIDGETS --- */
+        .dashboard-grid { display: grid; grid-template-columns: 320px 1fr 400px; grid-template-rows: auto 1fr; gap: 25px; }
         .apps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
         .profile-card { grid-column: 3 / 4; grid-row: 1 / 3; }
         .clock-widget { grid-column: 1 / 2; grid-row: 1 / 2; }
         .charging-stats { grid-column: 1 / 2; grid-row: 2 / 3; }
         .updates-widget { grid-column: 2 / 3; grid-row: 1 / 2; background: rgba(10, 10, 15, 0.4); }
         .mindfulness-stats { grid-column: 2 / 3; grid-row: 2 / 3; }
-        .page-title { font-size: 2rem; font-weight: 600; margin-bottom: 25px; }
         .clock-widget { justify-content: center; align-items: center; text-align: center; }
         #clock-time { font-size: 5rem; font-weight: 700; line-height: 1; }
         #clock-date { font-size: 1.2rem; color: var(--text-color-secondary); }
@@ -142,7 +159,9 @@
         .start-session-btn { background: rgba(255, 255, 255, 0.1); border: none; color: var(--text-color); padding: 12px 25px; border-radius: 12px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
         .start-session-btn:hover { background: rgba(255, 255, 255, 0.2); }
         .profile-card { justify-content: space-between; align-items: center; text-align: center; }
-        .profile-main { margin-top: 20px; }
+        
+        .profile-main { margin-top: 20px; display: flex; flex-direction: column; align-items: center; }
+        
         .profile-info-list { list-style: none; width: 100%; padding: 0 20px; margin: 20px 0; }
         .profile-info-list li { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
         .profile-info-list li:last-child { border-bottom: none; }
@@ -177,13 +196,66 @@
         .nav-icon { background: transparent; border: none; color: var(--text-color-secondary); padding: 10px; border-radius: 50%; cursor: pointer; transition: color 0.2s, background-color 0.2s; display: flex; }
         .nav-icon:hover { color: var(--text-color); background-color: rgba(255,255,255,0.1); }
 
+        /* --- SECCIÓN DE AJUSTES --- */
+        .settings-section { display: flex; flex-direction: column; gap: 25px; }
+        .settings-card { background: var(--bg-color); backdrop-filter: blur(var(--blur-amount)); -webkit-backdrop-filter: blur(var(--blur-amount)); border: 1px solid var(--border-color); padding: 25px; border-radius: 25px; }
+        .settings-card h3 { margin-bottom: 20px; font-weight: 600; }
+        .file-upload-btn { display: flex; align-items: center; justify-content: center; width: 100%; text-align: center; border: none; padding: 12px 20px; border-radius: 10px; font-family: var(--font-family-sans); font-weight: 600; cursor: pointer; transition: all 0.3s ease; background-color: var(--accent-color); color: #111; }
+        .file-upload-btn i { margin-right: 8px; }
+        #background-file-input { display: none; }
+        #mobile-profile-card { display: none; }
+
         /* --- DISEÑO RESPONSIVO --- */
         @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: 1fr 1fr; grid-template-rows: auto; } .profile-card { grid-column: 2 / 3; grid-row: 1 / 3; } }
-        @media (max-width: 800px) { body { overflow-y: auto; } .top-nav { top: auto; bottom: 0; width: 100%; border-radius: 0; } .nav-glass-container { width: 100%; border-radius: 25px 25px 0 0; } .top-nav .nav-link span { display: none; } .main-container { padding-bottom: 100px; } .page-content { padding: 20px; top: 0; height: auto; } .dashboard-grid { display: flex; flex-direction: column; gap: 20px; } }
-        @media (max-width: 500px) { #onboarding-screen .onboarding-card, .login-container, .setup-container { width: 90%; padding: 20px; } .onboarding-actions { flex-direction: column; } }
+        
+        @media (max-width: 800px) { 
+            .top-nav { 
+                position: fixed;
+                top: auto; 
+                bottom: 20px; 
+                width: auto; 
+                transform: translateX(-50%); 
+            } 
+            .nav-glass-container { border-radius: 50px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); } 
+            .top-nav .nav-link { padding: 12px; }
+            .top-nav .nav-link span { display: none; }
+            .top-nav .nav-link.active { background: var(--accent-color); color: #111; }
+            .top-nav .nav-link.active i { color: #111; }
+            
+            .main-container { 
+                padding: 0;
+                max-height: none;
+            } 
+            /* <-- CORRECCIÓN: Page-content es ahora el contenedor de scroll */
+            .page-content { 
+                position: absolute;
+                inset: 0;
+                height: 100%;
+                padding: 20px 20px 120px 20px; /* Top, LR, Bottom (para nav bar) */
+                overflow-y: auto;
+            } 
+            .dashboard-grid { display: flex; flex-direction: column; gap: 20px; }
+            
+            .dashboard-grid .profile-card { display: none; }
+            #mobile-profile-card { display: flex; }
+        }
+        
+        @media (max-width: 500px) { 
+            #onboarding-screen .onboarding-card, .login-container, .setup-container { width: 90%; padding: 20px; } 
+            .onboarding-actions { flex-direction: column; } 
+        }
     </style>
 </head>
 <body>
+
+    <!-- MODAL DE ERROR DE LOGIN -->
+    <div id="login-error-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Acceso Restringido</h3>
+            <p id="login-error-modal-message">Debes usar una cuenta de correo institucional (@ucuenca.edu.ec) para poder acceder.</p>
+            <button id="login-error-modal-close" class="modal-btn">Entendido</button>
+        </div>
+    </div>
 
     <!-- SPLASH SCREEN -->
     <div id="splash-screen">
@@ -218,7 +290,6 @@
                 <button id="deny-btn" class="onboarding-btn secondary">Denegar</button>
                 <button id="accept-btn" class="onboarding-btn primary">Aceptar y Continuar</button>
             </div>
-            <p id="agreement-error" class="error-message">Debes aceptar los términos para poder usar la aplicación.</p>
         </div>
     </div>
 
@@ -236,7 +307,6 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.19,4.73C14.03,4.73 15.6,5.36 16.81,6.45L18.87,4.59C17.01,3.01 14.7,2 12.19,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.19,22C17.6,22 21.54,18.33 21.54,12.29C21.54,11.77 21.48,11.44 21.35,11.1Z"/></svg>
                 <span>Seleccionar cuenta de Google</span>
             </button>
-            <p id="login-error" class="error-message">Error al iniciar sesión. Verifica tu cuenta.</p>
         </div>
     </div>
 
@@ -273,65 +343,131 @@
             <div class="nav-glass-container">
                 <ul>
                     <li><a href="#" class="nav-link active" data-target="summary-content"><i data-lucide="layout-grid"></i><span>Resumen</span></a></li>
+                    <li><a href="#" class="nav-link" data-target="services-content"><i data-lucide="briefcase"></i><span>Servicios</span></a></li>
                     <li><a href="#" class="nav-link" data-target="apps-content"><i data-lucide="app-window"></i><span>Apps</span></a></li>
-                    <li><a href="#" class="nav-link" data-target="templates-content"><i data-lucide="file-spreadsheet"></i><span>Plantillas</span></a></li>
                     <li><a href="#" class="nav-link" data-target="settings-content"><i data-lucide="settings"></i><span>Ajustes</span></a></li>
                 </ul>
             </div>
         </nav>
         <main class="main-container">
+            <!-- <-- CORRECCIÓN: Título movido dentro del holder -->
             <div id="summary-content" class="page-content active">
-                <div class="dashboard-grid">
-                    <div class="widget clock-widget"><div id="clock-time">17:01</div><div id="clock-date">Tuesday, 24 Oct</div></div>
-                    <div class="widget charging-stats">
-                        <h3>System Status</h3><p class="subtitle">Battery & Performance</p>
-                        <div class="progress-circle" data-progress="85"><svg viewBox="0 0 100 100"><circle class="progress-bg" cx="50" cy="50" r="45"></circle><circle class="progress-bar" cx="50" cy="50" r="45"></circle></svg><span class="progress-text">85%</span></div>
-                        <div class="charge-toggle"><div class="icon-wrapper"><i data-lucide="zap"></i></div><span>Optimal</span></div>
-                    </div>
-                    <div class="widget updates-widget">
-                        <h3>Últimas Actualizaciones</h3>
-                        <pre><code>[<span class="log-success">OK</span>] Studi.App v2.1 deployed
+                <div class="content-holder">
+                    <h1 class="page-title">Resumen</h1>
+                    <div class="dashboard-grid">
+                        <div class="widget clock-widget"><div id="clock-time">17:01</div><div id="clock-date">Tuesday, 24 Oct</div></div>
+                        <div class="widget charging-stats">
+                            <h3>System Status</h3><p class="subtitle">Battery & Performance</p>
+                            <div class="progress-circle" data-progress="85"><svg viewBox="0 0 100 100"><circle class="progress-bg" cx="50" cy="50" r="45"></circle><circle class="progress-bar" cx="50" cy="50" r="45"></circle></svg><span class="progress-text">85%</span></div>
+                            <div class="charge-toggle"><div class="icon-wrapper"><i data-lucide="zap"></i></div><span>Optimal</span></div>
+                        </div>
+                        <div class="widget updates-widget">
+                            <h3>Últimas Actualizaciones</h3>
+                            <pre><code>[<span class="log-success">OK</span>] Studi.App v2.1 deployed
 [<span class="log-info">INFO</span>] Orion tasks updated
 [<span class="log-warn">WARN</span>] API latency detected
 > Vitreum Hub v1.0.0 stable</code></pre>
-                    </div>
-                    <div class="widget mindfulness-stats">
-                        <h3>Mindfulness</h3><p class="subtitle">Quantum Calm</p>
-                        <div class="stats-grid"><div class="stat-item"><span class="label">Breath</span><span class="value">14/min</span></div><div class="stat-item"><span class="label">Sleep</span><span class="value">8.1h</span></div><div class="stat-item"><span class="label">Flow</span><span class="value">86%</span></div></div>
-                        <button class="start-session-btn">Iniciar Sesión</button>
-                    </div>
-                    <div class="widget profile-card">
-                        <div class="profile-main">
-                            <div class="profile-picture">
-                                <img id="user-profile-pic" src="https://placehold.co/120x120/ffffff/1e1e28?text=U" alt="User's profile picture">
-                            </div>
-                            <h2 id="user-display-name">Usuario</h2>
                         </div>
-                        <ul class="profile-info-list">
-                            <li><span>Email</span><strong id="user-email">correo@ejemplo.com</strong></li>
-                            <li><span>U. Educativa</span><strong>U. de Cuenca</strong></li>
-                            <li><span>Membresía</span><strong id="user-license" class="log-success">Acceso Anticipado</strong></li>
-                        </ul>
-                        <div class="profile-nav">
-                            <button id="logout-btn" class="nav-icon" title="Cerrar Sesión"><i data-lucide="log-out"></i></button>
-                            <button class="nav-icon" title="Modo Foco"><i data-lucide="monitor-smartphone"></i></button>
-                            <a href="https://gemini.google.com/" target="_blank" class="nav-icon" title="Abrir Google Gemini"><i data-lucide="sparkles"></i></a>
+                        <div class="widget mindfulness-stats">
+                            <h3>Mindfulness</h3><p class="subtitle">Quantum Calm</p>
+                            <div class="stats-grid"><div class="stat-item"><span class="label">Breath</span><span class="value">14/min</span></div><div class="stat-item"><span class="label">Sleep</span><span class="value">8.1h</span></div><div class="stat-item"><span class="label">Flow</span><span class="value">86%</span></div></div>
+                            <button class="start-session-btn">Iniciar Sesión</button>
+                        </div>
+                        <div class="widget profile-card">
+                            <div class="profile-main">
+                                <div class="profile-picture">
+                                    <img class="user-profile-pic" src="https://placehold.co/120x120/ffffff/1e1e28?text=U" alt="User's profile picture">
+                                </div>
+                                <h2 class="user-display-name">Usuario</h2>
+                            </div>
+                            <ul class="profile-info-list">
+                                <li><span>Email</span><strong class="user-email">correo@ejemplo.com</strong></li>
+                                <li><span>U. Educativa</span><strong>U. de Cuenca</strong></li>
+                                <li><span>Membresía</span><strong class="user-license log-success">Acceso Anticipado</strong></li>
+                            </ul>
+                            <div class="profile-nav">
+                                <button id="logout-btn" class="nav-icon" title="Cerrar Sesión"><i data-lucide="log-out"></i></button>
+                                <button class="nav-icon" title="Modo Foco"><i data-lucide="monitor-smartphone"></i></button>
+                                <a href="https://gemini.google.com/" target="_blank" class="nav-icon" title="Abrir Google Gemini"><i data-lucide="sparkles"></i></a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div id="apps-content" class="page-content">
-                <h1 class="page-title">Ecosistema Vitreum</h1>
-                <div class="apps-grid">
-                    <div class="widget app-card">
-                        <div class="app-preview-image"><img src="https://placehold.co/400x200/333/fff?text=Studi.App" alt="Studi.App Builder"></div>
-                        <div class="app-info"><h3>Studi.App Builder</h3><p>Crea y personaliza recursos educativos interactivos.</p></div>
-                        <a href="#" target="_blank" class="app-open-button">Abrir Builder</a>
+                <div class="content-holder">
+                    <h1 class="page-title">Ecosistema Vitreum</h1>
+                    <div class="apps-grid">
+                        <div class="widget app-card">
+                            <div class="app-preview-image"><img src="https://placehold.co/400x200/333/fff?text=Studi.App" alt="Studi.App Builder"></div>
+                            <div class="app-info"><h3>Studi.App Builder</h3><p>Crea y personaliza recursos educativos interactivos.</p></div>
+                            <a href="#" target="_blank" class="app-open-button">Abrir Builder</a>
+                        </div>
+                        <div class="widget app-card">
+                            <div class="app-preview-image"><img src="https://placehold.co/400x200/444/fff?text=QuantumNotes" alt="QuantumNotes"></div>
+                            <div class="app-info"><h3>QuantumNotes</h3><p>Toma de apuntes inteligente con IA integrada.</p></div>
+                            <a href="#" target="_blank" class="app-open-button">Abrir Notas</a>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div id="templates-content" class="page-content"></div>
-            <div id="settings-content" class="page-content"></div>
+            <div id="services-content" class="page-content">
+                <div class="content-holder">
+                    <h1 class="page-title">Servicios Universitarios</h1>
+                    <div class="apps-grid">
+                        <div class="widget app-card">
+                            <div class="app-preview-image"><img src="https://placehold.co/400x200/536DFE/fff?text=Correo" alt="Correo Institucional"></div>
+                            <div class="app-info"><h3>Correo Institucional</h3><p>Acceso directo a tu bandeja de entrada de Outlook.</p></div>
+                            <a href="#" target="_blank" class="app-open-button">Abrir Correo</a>
+                        </div>
+                        <div class="widget app-card">
+                            <div class="app-preview-image"><img src="https://placehold.co/400x200/E91E63/fff?text=SGA" alt="SGA"></div>
+                            <div class="app-info"><h3>SGA / Moodle</h3><p>Consulta tus notas, materias y recursos académicos.</p></div>
+                            <a href="#" target="_blank" class="app-open-button">Ir al SGA</a>
+                        </div>
+                         <div class="widget app-card">
+                            <div class="app-preview-image"><img src="https://placehold.co/400x200/009688/fff?text=Biblioteca" alt="Biblioteca"></div>
+                            <div class="app-info"><h3>Biblioteca Virtual</h3><p>Busca y accede a la base de datos de la biblioteca.</p></div>
+                            <a href="#" target="_blank" class="app-open-button">Buscar Libros</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="settings-content" class="page-content">
+                <div class="content-holder">
+                    <h1 class="page-title">Ajustes</h1>
+                    <div class="settings-section">
+                        <div id="mobile-profile-card" class="widget profile-card">
+                             <div class="profile-main">
+                                <div class="profile-picture">
+                                    <img class="user-profile-pic" src="https://placehold.co/120x120/ffffff/1e1e28?text=U" alt="User's profile picture">
+                                </div>
+                                <h2 class="user-display-name">Usuario</h2>
+                            </div>
+                            <ul class="profile-info-list">
+                                <li><span>Email</span><strong class="user-email">correo@ejemplo.com</strong></li>
+                                <li><span>U. Educativa</span><strong>U. de Cuenca</strong></li>
+                                <li><span>Membresía</span><strong class="user-license log-success">Acceso Anticipado</strong></li>
+                            </ul>
+                            <div class="profile-nav">
+                                <button class="nav-icon logout-btn-mobile" title="Cerrar Sesión"><i data-lucide="log-out"></i></button>
+                                <button class="nav-icon" title="Modo Foco"><i data-lucide="monitor-smartphone"></i></button>
+                                <a href="https://gemini.google.com/" target="_blank" class="nav-icon" title="Abrir Google Gemini"><i data-lucide="sparkles"></i></a>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-card">
+                            <h3>Personalizar Fondo</h3>
+                            <p style="color: var(--text-color-secondary); margin-bottom: 15px;">Elige una imagen de tu dispositivo para usarla como fondo.</p>
+                            <label for="background-file-input" class="file-upload-btn">
+                                <i data-lucide="image"></i>
+                                Seleccionar Imagen
+                            </label>
+                            <input type="file" id="background-file-input" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -347,15 +483,14 @@
         document.addEventListener('DOMContentLoaded', function() {
 
             // --- CONFIGURACIÓN DE FIREBASE ---
-            // ¡IMPORTANTE! Reemplaza esto con la configuración de tu propio proyecto de Firebase.
             const firebaseConfig = {
-  apiKey: "AIzaSyB1W2yLlVHivzBQPZJVOgpApQeYnJUFzCs",
-  authDomain: "vitreumucuencahub.firebaseapp.com",
-  projectId: "vitreumucuencahub",
-  storageBucket: "vitreumucuencahub.firebasestorage.app",
-  messagingSenderId: "628136581064",
-  appId: "1:628136581064:web:9ba793a7dfc104602fd2fd"
-};
+                apiKey: "AIzaSyB1W2yLlVHivzBQPZJVOgpApQeYnJUFzCs",
+                authDomain: "vitreumucuencahub.firebaseapp.com",
+                projectId: "vitreumucuencahub",
+                storageBucket: "vitreumucuencahub.firebasestorage.app",
+                messagingSenderId: "628136581064",
+                appId: "1:628136581064:web:9ba793a7dfc104602fd2fd"
+            };
 
             // --- INICIALIZACIÓN DE FIREBASE ---
             firebase.initializeApp(firebaseConfig);
@@ -368,6 +503,7 @@
             const loginScreen = document.getElementById('login-screen');
             const setupScreen = document.getElementById('setup-screen');
             const appWrapper = document.getElementById('app-wrapper');
+            const loginErrorModal = document.getElementById('login-error-modal');
             let currentUserData = {};
 
             // --- MÓDULO DE INICIALIZACIÓN PRINCIPAL ---
@@ -377,10 +513,13 @@
                 animateProgressBars();
                 setupNavigation();
                 setupActionButtons();
+                setupBackgroundChanger();
+                loadCustomBackground();
+                setupModal();
                 determineInitialFlow();
             }
 
-            // --- LÓGICA DE FLUJO INICIAL (Corregida) ---
+            // --- LÓGICA DE FLUJO INICIAL ---
             function determineInitialFlow() {
                 setTimeout(() => splashScreen.classList.add('visible'), 500);
                 setTimeout(() => splashScreen.classList.add('focused'), 2000);
@@ -399,10 +538,10 @@
                             }
 
                             if (user) {
-                                // Validar dominio por si acaso
                                 if (!user.email.endsWith('@ucuenca.edu.ec')) {
-                                    auth.signOut(); // Forzar cierre si no es del dominio
-                                    transitionTo(loginScreen, 'Acceso denegado. Dominio no permitido.');
+                                    auth.signOut();
+                                    showLoginErrorModal();
+                                    transitionTo(loginScreen);
                                     setupLogin();
                                     return;
                                 }
@@ -426,18 +565,26 @@
                 }, 3000);
             }
 
-            // --- MANEJO DE TRANSICIONES ---
-            function transitionTo(activeScreen, errorMessage = null) {
+            // --- MANEJO DE TRANSICIONES Y MODAL ---
+            function transitionTo(activeScreen) {
                 [onboardingScreen, loginScreen, setupScreen, appWrapper].forEach(screen => {
                     screen.classList.remove('active');
                 });
                 if (activeScreen) {
                     activeScreen.classList.add('active');
                 }
-                if (activeScreen === loginScreen && errorMessage) {
-                    const loginError = document.getElementById('login-error');
-                    loginError.textContent = errorMessage;
-                    loginError.classList.add('show');
+            }
+            
+            function showLoginErrorModal() {
+                if (loginErrorModal) loginErrorModal.classList.add('show');
+            }
+
+            function setupModal() {
+                const closeBtn = document.getElementById('login-error-modal-close');
+                if(closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                        loginErrorModal.classList.remove('show');
+                    });
                 }
             }
 
@@ -459,26 +606,20 @@
                 });
 
                 denyBtn.addEventListener('click', () => {
-                    const agreementError = document.getElementById('agreement-error');
-                    agreementError.classList.add('show');
-                    setTimeout(() => agreementError.classList.remove('show'), 3000);
+                    alert("Debes aceptar los términos para poder usar la aplicación.");
                 });
             }
 
             // --- MÓDULO DE LOGIN CON GOOGLE ---
             function setupLogin() {
                 const googleLoginBtn = document.getElementById('google-login-btn');
-                const loginError = document.getElementById('login-error');
-
-                // Prevenir múltiples listeners
                 const newBtn = googleLoginBtn.cloneNode(true);
                 googleLoginBtn.parentNode.replaceChild(newBtn, googleLoginBtn);
 
                 newBtn.addEventListener('click', () => {
-                    loginError.classList.remove('show');
                     auth.signInWithPopup(provider).catch(error => {
                         console.error("Error de login:", error);
-                        transitionTo(loginScreen, 'No se pudo iniciar sesión. Inténtalo de nuevo.');
+                        showLoginErrorModal();
                     });
                 });
             }
@@ -497,9 +638,7 @@
                     const file = event.target.files[0];
                     if (file) {
                         const reader = new FileReader();
-                        reader.onload = (e) => {
-                            setupProfilePic.src = e.target.result;
-                        };
+                        reader.onload = (e) => { setupProfilePic.src = e.target.result; };
                         reader.readAsDataURL(file);
                     }
                 };
@@ -512,7 +651,9 @@
                         
                         localStorage.setItem(`vitreumHubSetupComplete_${user.uid}`, 'true');
                         localStorage.setItem(`vitreumHubDisplayName_${user.uid}`, currentUserData.displayName);
-                        localStorage.setItem(`vitreumHubPhotoURL_${user.uid}`, currentUserData.photoURL);
+                        if (currentUserData.photoURL.startsWith('data:image')) {
+                            localStorage.setItem(`vitreumHubPhotoURL_${user.uid}`, currentUserData.photoURL);
+                        }
 
                         updateUIForUser(currentUserData);
                         transitionTo(appWrapper);
@@ -532,9 +673,9 @@
 
             function updateUIForUser(userData) {
                 if (!userData) return;
-                document.getElementById('user-profile-pic').src = userData.photoURL;
-                document.getElementById('user-display-name').textContent = userData.displayName;
-                document.getElementById('user-email').textContent = userData.email;
+                document.querySelectorAll('.user-profile-pic').forEach(el => el.src = userData.photoURL);
+                document.querySelectorAll('.user-display-name').forEach(el => el.textContent = userData.displayName);
+                document.querySelectorAll('.user-email').forEach(el => el.textContent = userData.email);
             }
 
             // --- ACCIONES (NAVEGACIÓN Y LOGOUT) ---
@@ -547,19 +688,49 @@
                         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
                         document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
                         link.classList.add('active');
-                        document.getElementById(targetId)?.classList.add('active');
+                        const targetPage = document.getElementById(targetId);
+                        if(targetPage) {
+                            targetPage.classList.add('active');
+                            targetPage.scrollTo(0, 0); // Scroll al inicio de la página al cambiar
+                        }
                     });
+                });
+            }
+            
+            function handleLogout() {
+                auth.signOut().then(() => {
+                    document.body.style.opacity = '0';
+                    setTimeout(() => location.reload(), 500);
                 });
             }
 
             function setupActionButtons() {
-                const logoutBtn = document.getElementById('logout-btn');
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', () => {
-                        auth.signOut().then(() => {
-                            document.body.style.opacity = '0';
-                            setTimeout(() => location.reload(), 500);
-                        });
+                document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
+                document.querySelector('.logout-btn-mobile')?.addEventListener('click', handleLogout);
+            }
+
+            // --- NUEVAS FUNCIONES DE UI ---
+            function loadCustomBackground() {
+                const customBg = localStorage.getItem('vitreumHubCustomBackground');
+                if (customBg) {
+                    appWrapper.style.backgroundImage = `url('${customBg}')`;
+                }
+            }
+
+            function setupBackgroundChanger() {
+                const bgFileInput = document.getElementById('background-file-input');
+                if (bgFileInput) {
+                    bgFileInput.addEventListener('change', (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                const newBgDataUrl = event.target.result;
+                                appWrapper.style.backgroundImage = `url('${newBgDataUrl}')`;
+                                localStorage.setItem('vitreumHubCustomBackground', newBgDataUrl);
+                            };
+                            reader.readAsDataURL(file);
+                        }
                     });
                 }
             }

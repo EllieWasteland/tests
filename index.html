@@ -7,7 +7,181 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* --- VARIABLES Y ESTILOS GLOBALES --- */
+        :root {
+            --bg-color: rgba(35, 35, 45, 0.4);
+            --border-color: rgba(255, 255, 255, 0.15);
+            --text-color: #f0f0f0;
+            --text-color-secondary: #a0a0b0;
+            --accent-color: #ffc966;
+            --dark-bg: #1e1e28;
+            --font-family-sans: 'Poppins', sans-serif;
+            --font-family-mono: 'Roboto Mono', monospace;
+            --blur-amount: 22px;
+            --log-success: #4ade80;
+            --log-warn: #facc15;
+            --log-info: #60a5fa;
+            --error-color: #f87171;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scrollbar-gutter: stable; }
+        body { font-family: var(--font-family-sans); background: #000; color: var(--text-color); min-height: 100vh; overflow: hidden; }
+
+        /* --- FONDOS Y LAYOUTS PRINCIPALES --- */
+        #onboarding-screen, #login-screen, #setup-screen, #app-wrapper {
+            background: url('https://images.unsplash.com/photo-1522441815192-d9f04eb0615c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover;
+            position: absolute;
+            inset: 0;
+            transition: opacity 0.6s ease-out, visibility 0.6s;
+        }
+
+        #splash-screen { position: fixed; inset: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.6s ease-out; overflow: hidden; background: #000; }
+
+        #onboarding-screen, #login-screen, #setup-screen { display: none; justify-content: center; align-items: center; opacity: 0; }
+        #onboarding-screen.active, #login-screen.active, #setup-screen.active { display: flex; opacity: 1; }
+
+        #app-wrapper { opacity: 0; visibility: hidden; }
+        #app-wrapper.active { opacity: 1; visibility: visible; }
+
+        /* --- SPLASH SCREEN --- */
+        #splash-screen::before { content: ''; position: absolute; inset: -50px; filter: blur(20px); transition: filter 1s ease-out; background: url('https://images.unsplash.com/photo-1522441815192-d9f04eb0615c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover;}
+        #splash-screen.focused::before { filter: blur(0px); }
+        #splash-screen.exit { opacity: 0; }
+        .splash-content { text-align: center; z-index: 1; }
+        .splash-logo { font-size: 4rem; font-weight: 700; letter-spacing: 0.5rem; color: rgba(255,255,255,0.8); filter: blur(4px); opacity: 0; transition: filter 1s ease-out, opacity 1s ease-out, color 1s ease-out; }
+        #splash-screen.visible .splash-logo { opacity: 1; }
+        #splash-screen.focused .splash-logo { filter: blur(0px); color: white; }
+        .loading-text { color: var(--text-color-secondary); margin-top: 20px; opacity: 0; transition: opacity 0.5s ease-out 1s; }
+        #splash-screen.visible .loading-text { opacity: 1; }
+        .focus-wave { position: absolute; top: 0; left: -2%; width: 2px; height: 100%; background-color: rgba(255, 255, 255, 0.8); box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5); transform: translateX(-50%); animation: wave-scan 2.5s ease-in-out 1s forwards; opacity: 0; }
+        @keyframes wave-scan { from { left: -2%; opacity: 1; } to { left: 102%; opacity: 1; } }
+
+        /* --- WIDGET GENERAL --- */
+        .widget { background: var(--bg-color); backdrop-filter: blur(var(--blur-amount)); -webkit-backdrop-filter: blur(var(--blur-amount)); border: 1px solid var(--border-color); padding: 25px; border-radius: 25px; display: flex; flex-direction: column; }
+
+        /* --- ONBOARDING --- */
+        #onboarding-screen .onboarding-card { width: 450px; text-align: center; display: none; gap: 20px; padding: 30px; }
+        #onboarding-screen .onboarding-card.active { display: flex; }
+        .onboarding-image-placeholder { width: 100%; height: 180px; border-radius: 15px; background-color: rgba(0,0,0,0.2); margin-bottom: 10px; overflow: hidden; }
+        .onboarding-image-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+        .onboarding-card h3 { font-size: 1.5rem; font-weight: 600; }
+        .onboarding-card p { color: var(--text-color-secondary); line-height: 1.6; }
+        .disclaimer-text { font-size: 0.9rem; }
+        .onboarding-actions { margin-top: 20px; display: flex; gap: 15px; width: 100%; justify-content: center; }
+        .onboarding-btn { border: none; padding: 12px 30px; border-radius: 50px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; width: 100%; }
+        .onboarding-btn.primary { background-color: var(--accent-color); color: #111; }
+        .onboarding-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(255, 201, 102, 0.2); }
+        .onboarding-btn.secondary { background-color: rgba(255, 255, 255, 0.1); color: var(--text-color); }
+        .onboarding-btn.secondary:hover { background-color: rgba(255, 255, 255, 0.2); }
+
+        /* --- LOGIN (REDiseñado) --- */
+        #login-screen { overflow: hidden; }
+        .login-art-container { position: absolute; inset: 0; z-index: 0; }
+        .login-art-shape { position: absolute; border-radius: 50%; filter: blur(150px); }
+        .login-art-shape.shape1 { width: 400px; height: 400px; background: rgba(100, 100, 255, 0.3); top: 10%; left: 15%; animation: move-shape1 20s infinite alternate ease-in-out; }
+        .login-art-shape.shape2 { width: 350px; height: 350px; background: rgba(255, 100, 150, 0.3); bottom: 10%; right: 15%; animation: move-shape2 25s infinite alternate ease-in-out; }
+        @keyframes move-shape1 { to { transform: translate(100px, 50px) scale(1.2); } }
+        @keyframes move-shape2 { to { transform: translate(-80px, -60px) scale(0.9); } }
+        .login-container { width: 420px; padding: 40px; text-align: center; z-index: 1; }
+        .login-logo { font-size: 2.5rem; font-weight: 700; letter-spacing: 0.3rem; margin-bottom: 10px; }
+        .login-container h2 { font-weight: 500; color: var(--text-color); margin-bottom: 10px; }
+        .login-container p { color: var(--text-color-secondary); margin-bottom: 30px; }
+        .google-login-btn { display: inline-flex; align-items: center; justify-content: center; gap: 15px; padding: 12px 30px; border: none; border-radius: 50px; background-color: #fff; color: #333; font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .google-login-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        .google-login-btn svg { width: 22px; height: 22px; }
+        .error-message { color: var(--error-color); visibility: hidden; height: 1em; font-size: 0.9rem; margin-top: 15px; transition: visibility 0.2s; }
+        .error-message.show { visibility: visible; }
+
+        /* --- SETUP SCREEN --- */
+        .setup-container { width: 480px; text-align: center; gap: 20px; }
+        .setup-container h3 { font-size: 1.8rem; }
+        .setup-container p { color: var(--text-color-secondary); margin-top: -15px; }
+        .profile-editor { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; margin-top: 10px; }
+        .profile-pic-label { position: relative; cursor: pointer; }
+        .profile-pic-label img { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--border-color); object-fit: cover; }
+        .profile-pic-label .pic-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; opacity: 0; transition: opacity 0.3s ease; }
+        .profile-pic-label:hover .pic-overlay { opacity: 1; }
+        #profile-pic-input { display: none; }
+        .setup-input { width: 100%; padding: 12px 20px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-color); font-size: 1rem; text-align: center; }
+        .early-access-card { display: flex; align-items: center; gap: 20px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 15px; text-align: left; }
+        .early-access-card .icon-wrapper { color: var(--accent-color); }
+        .early-access-card h4 { margin: 0; font-size: 1rem; }
+        .early-access-card p { margin: 0; font-size: 0.9rem; }
+
+        /* --- LAYOUT PRINCIPAL DE LA APP --- */
+        .top-nav { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; }
+        .nav-glass-container { background: var(--bg-color); backdrop-filter: blur(var(--blur-amount)); border: 1px solid var(--border-color); border-radius: 50px; padding: 5px; }
+        .top-nav ul { list-style: none; display: flex; gap: 5px; }
+        .top-nav .nav-link { display: flex; align-items: center; gap: 8px; padding: 10px 25px; text-decoration: none; color: var(--text-color-secondary); font-weight: 500; border-radius: 50px; transition: all 0.3s ease; }
+        .top-nav .nav-link i { width: 18px; }
+        .top-nav .nav-link.active { color: #111; background: var(--text-color); font-weight: 600; }
+        .main-container { position: relative; width: 100%; height: 100vh; max-width: 1600px; max-height: 900px; padding-top: 90px; margin: 0 auto; }
+        .page-content { display: none; width: 100%; height: calc(100% - 90px); position: absolute; top: 90px; left: 0; padding: 20px 50px; overflow-y: auto; }
+        .page-content.active { display: block; }
+
+        /* --- GRIDS Y WIDGETS (Restaurados) --- */
+        .dashboard-grid { display: grid; grid-template-columns: 320px 1fr 400px; grid-template-rows: auto 1fr; gap: 25px; height: 100%; }
+        .apps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
+        .profile-card { grid-column: 3 / 4; grid-row: 1 / 3; }
+        .clock-widget { grid-column: 1 / 2; grid-row: 1 / 2; }
+        .charging-stats { grid-column: 1 / 2; grid-row: 2 / 3; }
+        .updates-widget { grid-column: 2 / 3; grid-row: 1 / 2; background: rgba(10, 10, 15, 0.4); }
+        .mindfulness-stats { grid-column: 2 / 3; grid-row: 2 / 3; }
+        .page-title { font-size: 2rem; font-weight: 600; margin-bottom: 25px; }
+        .clock-widget { justify-content: center; align-items: center; text-align: center; }
+        #clock-time { font-size: 5rem; font-weight: 700; line-height: 1; }
+        #clock-date { font-size: 1.2rem; color: var(--text-color-secondary); }
+        .updates-widget pre { font-family: var(--font-family-mono); font-size: 0.9rem; line-height: 1.6; margin: auto 0; }
+        .updates-widget code .log-success { color: var(--log-success); }
+        .updates-widget code .log-warn { color: var(--log-warn); }
+        .updates-widget code .log-info { color: var(--log-info); }
+        .mindfulness-stats { align-items: center; text-align: center; justify-content: space-between; background: linear-gradient(270deg, rgba(83, 88, 133, 0.4), rgba(133, 83, 120, 0.4)); background-size: 400% 400%; animation: calm-gradient 15s ease infinite; }
+        @keyframes calm-gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .start-session-btn { background: rgba(255, 255, 255, 0.1); border: none; color: var(--text-color); padding: 12px 25px; border-radius: 12px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
+        .start-session-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .profile-card { justify-content: space-between; align-items: center; text-align: center; }
+        .profile-main { margin-top: 20px; }
+        .profile-info-list { list-style: none; width: 100%; padding: 0 20px; margin: 20px 0; }
+        .profile-info-list li { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .profile-info-list li:last-child { border-bottom: none; }
+        .profile-info-list li span { color: var(--text-color-secondary); }
+        .profile-nav { margin-bottom: 20px; }
+        .app-card { gap: 20px; }
+        .app-preview-image { width: 100%; height: 160px; border-radius: 15px; overflow: hidden; background-color: rgba(0,0,0,0.2); }
+        .app-preview-image img { width: 100%; height: 100%; object-fit: cover; }
+        .app-info h3 { font-size: 1.2rem; }
+        .app-info p { font-size: 0.9rem; color: var(--text-color-secondary); }
+        .app-open-button { background-color: var(--accent-color); color: #111; text-decoration: none; text-align: center; padding: 12px; border-radius: 12px; font-weight: 600; margin-top: auto; transition: transform 0.2s ease; }
+        .app-open-button:hover { transform: translateY(-2px); }
+        .charging-stats .subtitle { color: var(--text-color-secondary); font-size: 0.9rem; margin-top: 5px; }
+        .progress-circle { position: relative; width: 100px; height: 100px; display: flex; justify-content: center; align-items: center; margin: auto; }
+        .progress-circle svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+        .progress-circle .progress-bg { fill: none; stroke: rgba(255, 255, 255, 0.1); stroke-width: 10; }
+        .progress-circle .progress-bar { fill: none; stroke: var(--accent-color); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; transition: stroke-dashoffset 0.8s ease; }
+        .progress-text { font-size: 1.5rem; font-weight: 600; }
+        .charge-toggle { display: flex; align-items: center; justify-content: space-between; background: rgba(0, 0, 0, 0.2); border-radius: 50px; padding: 5px; margin-top: auto; }
+        .charge-toggle .icon-wrapper { background: var(--accent-color); color: #333; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        .charge-toggle span { margin-right: 20px; font-weight: 500; }
+        .stats-grid { display: flex; justify-content: space-around; width: 100%; gap: 10px; }
+        .stat-item { display: flex; flex-direction: column; align-items: center; background: rgba(0, 0, 0, 0.2); padding: 15px 10px; border-radius: 20px; flex-grow: 1; }
+        .stat-item .label { font-size: 0.8rem; color: var(--text-color-secondary); }
+        .stat-item .value { font-size: 1.2rem; font-weight: 600; margin-top: 5px; }
+        .profile-picture { width: 120px; height: 120px; border-radius: 50%; margin-bottom: 15px; position: relative; }
+        .profile-picture::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; background: radial-gradient(circle, var(--accent-color) 40%, transparent 70%); filter: blur(15px); z-index: -1; animation: subtle-pulse 5s infinite ease-in-out; }
+        @keyframes subtle-pulse { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.05); opacity: 1; } }
+        .profile-picture img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid white; }
+        .profile-main h2 { font-size: 1.8rem; font-weight: 500; }
+        .profile-nav { display: flex; gap: 15px; background: rgba(0, 0, 0, 0.2); padding: 10px 20px; border-radius: 30px; }
+        .nav-icon { background: transparent; border: none; color: var(--text-color-secondary); padding: 10px; border-radius: 50%; cursor: pointer; transition: color 0.2s, background-color 0.2s; display: flex; }
+        .nav-icon:hover { color: var(--text-color); background-color: rgba(255,255,255,0.1); }
+
+        /* --- DISEÑO RESPONSIVO --- */
+        @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: 1fr 1fr; grid-template-rows: auto; } .profile-card { grid-column: 2 / 3; grid-row: 1 / 3; } }
+        @media (max-width: 800px) { body { overflow-y: auto; } .top-nav { top: auto; bottom: 0; width: 100%; border-radius: 0; } .nav-glass-container { width: 100%; border-radius: 25px 25px 0 0; } .top-nav .nav-link span { display: none; } .main-container { padding-bottom: 100px; } .page-content { padding: 20px; top: 0; height: auto; } .dashboard-grid { display: flex; flex-direction: column; gap: 20px; } }
+        @media (max-width: 500px) { #onboarding-screen .onboarding-card, .login-container, .setup-container { width: 90%; padding: 20px; } .onboarding-actions { flex-direction: column; } }
+    </style>
 </head>
 <body>
 
@@ -20,22 +194,76 @@
         <div class="focus-wave"></div>
     </div>
 
+    <!-- ONBOARDING SCREEN -->
+    <div id="onboarding-screen">
+        <div id="welcome-card" class="onboarding-card widget active">
+            <div class="onboarding-image-placeholder">
+                 <img src="https://placehold.co/400x200/3b3b4a/f0f0f0?text=Bienvenido" alt="Imagen de Bienvenida">
+            </div>
+            <h3>Bienvenido a Vitreum Hub</h3>
+            <p>Nuestro objetivo es simplificar y unificar el acceso a los servicios digitales de la Universidad de Cuenca para todos los estudiantes.</p>
+            <div class="onboarding-actions">
+                <button id="next-btn" class="onboarding-btn primary">Siguiente</button>
+            </div>
+        </div>
+        <div id="agreement-card" class="onboarding-card widget">
+            <div class="onboarding-image-placeholder">
+                 <img src="https://placehold.co/400x200/3b3b4a/f0f0f0?text=Acuerdo" alt="Imagen de Acuerdo">
+            </div>
+            <h3>Acuerdo de Usuario</h3>
+            <p class="disclaimer-text">
+                Esta aplicación es un proyecto independiente y <strong>no es una plataforma oficial</strong> de la Universidad de Cuenca. Las marcas y logos utilizados son propiedad de la universidad. Al continuar, aceptas usar esta herramienta bajo tu propia responsabilidad.
+            </p>
+            <div class="onboarding-actions">
+                <button id="deny-btn" class="onboarding-btn secondary">Denegar</button>
+                <button id="accept-btn" class="onboarding-btn primary">Aceptar y Continuar</button>
+            </div>
+            <p id="agreement-error" class="error-message">Debes aceptar los términos para poder usar la aplicación.</p>
+        </div>
+    </div>
+
     <!-- LOGIN SCREEN -->
     <div id="login-screen">
+        <div class="login-art-container">
+            <div class="login-art-shape shape1"></div>
+            <div class="login-art-shape shape2"></div>
+        </div>
         <div class="login-container widget">
-            <div class="profile-picture-login">
-                <!-- La imagen se actualizará con la del perfil de Google -->
-                <img src="https://placehold.co/120x120/1e1e28/f0f0f0?text=?" alt="Foto de Perfil">
-            </div>
-            <h2>Bienvenido a Vitreum</h2>
-            <p>Inicia sesión para continuar</p>
-            
-            <!-- Botón de inicio de sesión con Google -->
+            <h1 class="login-logo">VITREUM</h1>
+            <h2>Acceso Estudiantil</h2>
+            <p>Usa tu cuenta institucional para ingresar al ecosistema.</p>
             <button id="google-login-btn" class="google-login-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.19,4.73C14.03,4.73 15.6,5.36 16.81,6.45L18.87,4.59C17.01,3.01 14.7,2 12.19,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.19,22C17.6,22 21.54,18.33 21.54,12.29C21.54,11.77 21.48,11.44 21.35,11.1Z"/></svg>
-                <span>Acceder con Google</span>
+                <span>Seleccionar cuenta de Google</span>
             </button>
             <p id="login-error" class="error-message">Error al iniciar sesión. Verifica tu cuenta.</p>
+        </div>
+    </div>
+
+    <!-- SETUP SCREEN -->
+    <div id="setup-screen">
+        <div class="setup-container widget">
+            <h3>Configuración Inicial</h3>
+            <p>Personaliza tu perfil antes de continuar.</p>
+            
+            <div class="profile-editor">
+                <label for="profile-pic-input" class="profile-pic-label">
+                    <img id="setup-profile-pic" src="https://placehold.co/120x120/1e1e28/f0f0f0?text=?" alt="Foto de perfil">
+                    <div class="pic-overlay"><i data-lucide="camera"></i></div>
+                </label>
+                <input type="file" id="profile-pic-input" accept="image/*">
+                <input type="text" id="setup-display-name" class="setup-input" placeholder="Tu nombre para mostrar">
+            </div>
+
+            <div class="early-access-card">
+                <div class="icon-wrapper"><i data-lucide="shield-alert"></i></div>
+                <div class="text-wrapper">
+                    <h4>Acceso Anticipado</h4>
+                    <p>Esta versión es gratuita. Futuras versiones podrían tener funciones premium.</p>
+                </div>
+            </div>
+
+            <button id="finish-setup-btn" class="onboarding-btn primary">Finalizar y Entrar</button>
         </div>
     </div>
 
@@ -51,9 +279,7 @@
                 </ul>
             </div>
         </nav>
-
         <main class="main-container">
-            <!-- SECCIÓN RESUMEN -->
             <div id="summary-content" class="page-content active">
                 <div class="dashboard-grid">
                     <div class="widget clock-widget"><div id="clock-time">17:01</div><div id="clock-date">Tuesday, 24 Oct</div></div>
@@ -65,7 +291,6 @@
                     <div class="widget updates-widget">
                         <h3>Últimas Actualizaciones</h3>
                         <pre><code>[<span class="log-success">OK</span>] Studi.App v2.1 deployed
-[<span class="log-success">OK</span>] EGB.Panel sync complete
 [<span class="log-info">INFO</span>] Orion tasks updated
 [<span class="log-warn">WARN</span>] API latency detected
 > Vitreum Hub v1.0.0 stable</code></pre>
@@ -85,7 +310,7 @@
                         <ul class="profile-info-list">
                             <li><span>Email</span><strong id="user-email">correo@ejemplo.com</strong></li>
                             <li><span>U. Educativa</span><strong>U. de Cuenca</strong></li>
-                            <li><span>Membresía</span><strong id="user-license" class="log-success">Activa</strong></li>
+                            <li><span>Membresía</span><strong id="user-license" class="log-success">Acceso Anticipado</strong></li>
                         </ul>
                         <div class="profile-nav">
                             <button id="logout-btn" class="nav-icon" title="Cerrar Sesión"><i data-lucide="log-out"></i></button>
@@ -95,7 +320,6 @@
                     </div>
                 </div>
             </div>
-            <!-- SECCIÓN APPS -->
             <div id="apps-content" class="page-content">
                 <h1 class="page-title">Ecosistema Vitreum</h1>
                 <div class="apps-grid">
@@ -104,17 +328,10 @@
                         <div class="app-info"><h3>Studi.App Builder</h3><p>Crea y personaliza recursos educativos interactivos.</p></div>
                         <a href="#" target="_blank" class="app-open-button">Abrir Builder</a>
                     </div>
-                    <div class="widget app-card">
-                        <div class="app-preview-image"><img src="https://placehold.co/400x200/333/fff?text=EGB.Panel" alt="EGB.Panel"></div>
-                        <div class="app-info"><h3>EGB.Panel</h3><p>Panel de gestión académica para Educación General Básica.</p></div>
-                        <a href="#" target="_blank" class="app-open-button">Ir al Panel</a>
-                    </div>
                 </div>
             </div>
             <div id="templates-content" class="page-content"></div>
-            <div id="settings-content" class="page-content">
-                <div class="settings-panel widget"><h2>System Settings</h2><p>Configuration options will be available here soon.</p></div>
-            </div>
+            <div id="settings-content" class="page-content"></div>
         </main>
     </div>
 
@@ -122,8 +339,259 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     
-    <!-- Lucide Icons & Custom Script -->
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="script.js"></script>
+
+    <!-- Lógica de la Aplicación -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // --- CONFIGURACIÓN DE FIREBASE ---
+            // ¡IMPORTANTE! Reemplaza esto con la configuración de tu propio proyecto de Firebase.
+            const firebaseConfig = {
+                apiKey: "TU_API_KEY",
+                authDomain: "TU_AUTH_DOMAIN",
+                projectId: "TU_PROJECT_ID",
+                storageBucket: "TU_STORAGE_BUCKET",
+                messagingSenderId: "TU_MESSAGING_SENDER_ID",
+                appId: "TU_APP_ID"
+            };
+
+            // --- INICIALIZACIÓN DE FIREBASE ---
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const provider = new firebase.auth.GoogleAuthProvider();
+
+            // --- SELECTORES DE ELEMENTOS DEL DOM ---
+            const splashScreen = document.getElementById('splash-screen');
+            const onboardingScreen = document.getElementById('onboarding-screen');
+            const loginScreen = document.getElementById('login-screen');
+            const setupScreen = document.getElementById('setup-screen');
+            const appWrapper = document.getElementById('app-wrapper');
+            let currentUserData = {};
+
+            // --- MÓDULO DE INICIALIZACIÓN PRINCIPAL ---
+            function initializeApp() {
+                lucide.createIcons();
+                startClock();
+                animateProgressBars();
+                setupNavigation();
+                setupActionButtons();
+                determineInitialFlow();
+            }
+
+            // --- LÓGICA DE FLUJO INICIAL (Corregida) ---
+            function determineInitialFlow() {
+                setTimeout(() => splashScreen.classList.add('visible'), 500);
+                setTimeout(() => splashScreen.classList.add('focused'), 2000);
+
+                setTimeout(() => {
+                    splashScreen.classList.add('exit');
+                    setTimeout(() => {
+                        splashScreen.style.display = 'none';
+                        
+                        auth.onAuthStateChanged(user => {
+                            const onboardingComplete = localStorage.getItem('vitreumHubOnboardingComplete');
+                            if (onboardingComplete !== 'true') {
+                                transitionTo(onboardingScreen);
+                                setupOnboarding();
+                                return;
+                            }
+
+                            if (user) {
+                                // Validar dominio por si acaso
+                                if (!user.email.endsWith('@ucuenca.edu.ec')) {
+                                    auth.signOut(); // Forzar cierre si no es del dominio
+                                    transitionTo(loginScreen, 'Acceso denegado. Dominio no permitido.');
+                                    setupLogin();
+                                    return;
+                                }
+
+                                const setupComplete = localStorage.getItem(`vitreumHubSetupComplete_${user.uid}`);
+                                if (setupComplete === 'true') {
+                                    loadUserFromStorage(user);
+                                    updateUIForUser(currentUserData);
+                                    transitionTo(appWrapper);
+                                } else {
+                                    currentUserData = { displayName: user.displayName, photoURL: user.photoURL, email: user.email, uid: user.uid };
+                                    transitionTo(setupScreen);
+                                    setupInitialConfig();
+                                }
+                            } else {
+                                transitionTo(loginScreen);
+                                setupLogin();
+                            }
+                        });
+                    }, 600);
+                }, 3000);
+            }
+
+            // --- MANEJO DE TRANSICIONES ---
+            function transitionTo(activeScreen, errorMessage = null) {
+                [onboardingScreen, loginScreen, setupScreen, appWrapper].forEach(screen => {
+                    screen.classList.remove('active');
+                });
+                if (activeScreen) {
+                    activeScreen.classList.add('active');
+                }
+                if (activeScreen === loginScreen && errorMessage) {
+                    const loginError = document.getElementById('login-error');
+                    loginError.textContent = errorMessage;
+                    loginError.classList.add('show');
+                }
+            }
+
+            // --- MANEJO DEL ONBOARDING ---
+            function setupOnboarding() {
+                const nextBtn = document.getElementById('next-btn');
+                const acceptBtn = document.getElementById('accept-btn');
+                const denyBtn = document.getElementById('deny-btn');
+
+                nextBtn.addEventListener('click', () => {
+                    document.getElementById('welcome-card').classList.remove('active');
+                    document.getElementById('agreement-card').classList.add('active');
+                });
+                
+                acceptBtn.addEventListener('click', () => {
+                    localStorage.setItem('vitreumHubOnboardingComplete', 'true');
+                    transitionTo(loginScreen);
+                    setupLogin();
+                });
+
+                denyBtn.addEventListener('click', () => {
+                    const agreementError = document.getElementById('agreement-error');
+                    agreementError.classList.add('show');
+                    setTimeout(() => agreementError.classList.remove('show'), 3000);
+                });
+            }
+
+            // --- MÓDULO DE LOGIN CON GOOGLE ---
+            function setupLogin() {
+                const googleLoginBtn = document.getElementById('google-login-btn');
+                const loginError = document.getElementById('login-error');
+
+                // Prevenir múltiples listeners
+                const newBtn = googleLoginBtn.cloneNode(true);
+                googleLoginBtn.parentNode.replaceChild(newBtn, googleLoginBtn);
+
+                newBtn.addEventListener('click', () => {
+                    loginError.classList.remove('show');
+                    auth.signInWithPopup(provider).catch(error => {
+                        console.error("Error de login:", error);
+                        transitionTo(loginScreen, 'No se pudo iniciar sesión. Inténtalo de nuevo.');
+                    });
+                });
+            }
+
+            // --- MANEJO DE CONFIGURACIÓN INICIAL ---
+            function setupInitialConfig() {
+                const setupProfilePic = document.getElementById('setup-profile-pic');
+                const setupDisplayName = document.getElementById('setup-display-name');
+                const profilePicInput = document.getElementById('profile-pic-input');
+                const finishSetupBtn = document.getElementById('finish-setup-btn');
+
+                setupProfilePic.src = currentUserData.photoURL || 'https://placehold.co/120x120/1e1e28/f0f0f0?text=?';
+                setupDisplayName.value = currentUserData.displayName;
+
+                profilePicInput.onchange = (event) => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            setupProfilePic.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+
+                finishSetupBtn.onclick = () => {
+                    const user = auth.currentUser;
+                    if (user) {
+                        currentUserData.displayName = setupDisplayName.value;
+                        currentUserData.photoURL = setupProfilePic.src;
+                        
+                        localStorage.setItem(`vitreumHubSetupComplete_${user.uid}`, 'true');
+                        localStorage.setItem(`vitreumHubDisplayName_${user.uid}`, currentUserData.displayName);
+                        localStorage.setItem(`vitreumHubPhotoURL_${user.uid}`, currentUserData.photoURL);
+
+                        updateUIForUser(currentUserData);
+                        transitionTo(appWrapper);
+                    }
+                };
+            }
+            
+            // --- MANEJO DE DATOS DE USUARIO ---
+            function loadUserFromStorage(user) {
+                 currentUserData = {
+                    displayName: localStorage.getItem(`vitreumHubDisplayName_${user.uid}`) || user.displayName,
+                    photoURL: localStorage.getItem(`vitreumHubPhotoURL_${user.uid}`) || user.photoURL,
+                    email: user.email,
+                    uid: user.uid
+                };
+            }
+
+            function updateUIForUser(userData) {
+                if (!userData) return;
+                document.getElementById('user-profile-pic').src = userData.photoURL;
+                document.getElementById('user-display-name').textContent = userData.displayName;
+                document.getElementById('user-email').textContent = userData.email;
+            }
+
+            // --- ACCIONES (NAVEGACIÓN Y LOGOUT) ---
+            function setupNavigation() {
+                const navLinks = document.querySelectorAll('.nav-link');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const targetId = link.getAttribute('data-target');
+                        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+                        link.classList.add('active');
+                        document.getElementById(targetId)?.classList.add('active');
+                    });
+                });
+            }
+
+            function setupActionButtons() {
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', () => {
+                        auth.signOut().then(() => {
+                            document.body.style.opacity = '0';
+                            setTimeout(() => location.reload(), 500);
+                        });
+                    });
+                }
+            }
+
+            // --- MÓDULOS DE UI ---
+            function startClock() {
+                const timeEl = document.getElementById('clock-time');
+                const dateEl = document.getElementById('clock-date');
+                if (!timeEl || !dateEl) return;
+                function updateClock() {
+                    const now = new Date();
+                    timeEl.textContent = now.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: false });
+                    dateEl.textContent = now.toLocaleDateString('es-EC', { weekday: 'long', day: 'numeric', month: 'short' });
+                }
+                updateClock();
+                setInterval(updateClock, 1000);
+            }
+            
+            function animateProgressBars() {
+                document.querySelectorAll('.progress-circle').forEach(circle => {
+                    const bar = circle.querySelector('.progress-bar');
+                    const progress = circle.dataset.progress;
+                    if (bar && progress) {
+                        const r = bar.r.baseVal.value;
+                        const circumference = 2 * Math.PI * r;
+                        bar.style.strokeDashoffset = circumference * (1 - progress / 100);
+                    }
+                });
+            }
+
+            initializeApp();
+        });
+    </script>
 </body>
 </html>

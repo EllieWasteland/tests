@@ -11,7 +11,7 @@
 </head>
 <body>
 
-    <!-- SPLASH SCREEN (REIMAGINADA) -->
+    <!-- SPLASH SCREEN -->
     <div id="splash-screen">
         <div class="splash-content">
             <h1 class="splash-logo">VITREUM</h1>
@@ -23,12 +23,19 @@
     <!-- LOGIN SCREEN -->
     <div id="login-screen">
         <div class="login-container widget">
-            <div class="profile-picture-login"><img src="img/profile.jpg" alt="Profile Picture"></div>
-            <h2>Bienvenido, Usuario</h2><p>Ingresa tu PIN para continuar</p>
-            <div id="pin-container" class="pin-code-inputs">
-                <input type="number" class="pin-input" maxlength="1"><input type="number" class="pin-input" maxlength="1"><input type="number" class="pin-input" maxlength="1"><input type="number" class="pin-input" maxlength="1"><input type="number" class="pin-input" maxlength="1">
+            <div class="profile-picture-login">
+                <!-- La imagen se actualizará con la del perfil de Google -->
+                <img src="https://placehold.co/120x120/1e1e28/f0f0f0?text=?" alt="Foto de Perfil">
             </div>
-            <p id="pin-error" class="error-message">PIN inválido. Inténtalo de nuevo.</p>
+            <h2>Bienvenido a Vitreum</h2>
+            <p>Inicia sesión para continuar</p>
+            
+            <!-- Botón de inicio de sesión con Google -->
+            <button id="google-login-btn" class="google-login-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.19,4.73C14.03,4.73 15.6,5.36 16.81,6.45L18.87,4.59C17.01,3.01 14.7,2 12.19,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.19,22C17.6,22 21.54,18.33 21.54,12.29C21.54,11.77 21.48,11.44 21.35,11.1Z"/></svg>
+                <span>Acceder con Google</span>
+            </button>
+            <p id="login-error" class="error-message">Error al iniciar sesión. Verifica tu cuenta.</p>
         </div>
     </div>
 
@@ -69,11 +76,16 @@
                         <button class="start-session-btn">Iniciar Sesión</button>
                     </div>
                     <div class="widget profile-card">
-                        <div class="profile-main"><div class="profile-picture"><img src="img/profile.jpg" alt="User's profile picture"></div><h2>Usuario</h2></div>
+                        <div class="profile-main">
+                            <div class="profile-picture">
+                                <img id="user-profile-pic" src="https://placehold.co/120x120/ffffff/1e1e28?text=U" alt="User's profile picture">
+                            </div>
+                            <h2 id="user-display-name">Usuario</h2>
+                        </div>
                         <ul class="profile-info-list">
-                            <li><span>Pronombres</span><strong>Él/Ella</strong></li>
-                            <li><span>U. Educativa</span><strong>Unidad del Milenio</strong></li>
-                            <li><span>Membresía</span><strong class="log-success">Activa</strong></li>
+                            <li><span>Email</span><strong id="user-email">correo@ejemplo.com</strong></li>
+                            <li><span>U. Educativa</span><strong>U. de Cuenca</strong></li>
+                            <li><span>Membresía</span><strong id="user-license" class="log-success">Activa</strong></li>
                         </ul>
                         <div class="profile-nav">
                             <button id="logout-btn" class="nav-icon" title="Cerrar Sesión"><i data-lucide="log-out"></i></button>
@@ -88,29 +100,14 @@
                 <h1 class="page-title">Ecosistema Vitreum</h1>
                 <div class="apps-grid">
                     <div class="widget app-card">
-                        <div class="app-preview-image"><img src="img/app-preview-1.jpg" alt="Studi.App Builder"></div>
+                        <div class="app-preview-image"><img src="https://placehold.co/400x200/333/fff?text=Studi.App" alt="Studi.App Builder"></div>
                         <div class="app-info"><h3>Studi.App Builder</h3><p>Crea y personaliza recursos educativos interactivos.</p></div>
                         <a href="#" target="_blank" class="app-open-button">Abrir Builder</a>
                     </div>
                     <div class="widget app-card">
-                        <div class="app-preview-image"><img src="img/app-preview-2.jpg" alt="EGB.Panel"></div>
+                        <div class="app-preview-image"><img src="https://placehold.co/400x200/333/fff?text=EGB.Panel" alt="EGB.Panel"></div>
                         <div class="app-info"><h3>EGB.Panel</h3><p>Panel de gestión académica para Educación General Básica.</p></div>
                         <a href="#" target="_blank" class="app-open-button">Ir al Panel</a>
-                    </div>
-                    <div class="widget app-card">
-                        <div class="app-preview-image"><img src="img/app-preview-3.jpg" alt="Orion Task Manager"></div>
-                        <div class="app-info"><h3>Orion</h3><p>Organizador de tareas y proyectos para docentes.</p></div>
-                        <a href="#" target="_blank" class="app-open-button">Gestionar Tareas</a>
-                    </div>
-                    <div class="widget app-card">
-                        <div class="app-preview-image"><img src="img/app-preview-4.jpg" alt="Studi.App Pizarra Inteligente"></div>
-                        <div class="app-info"><h3>Pizarra Inteligente</h3><p>Espacio de colaboración visual en tiempo real para clases.</p></div>
-                        <a href="#" target="_blank" class="app-open-button">Iniciar Pizarra</a>
-                    </div>
-                    <div class="widget app-card">
-                        <div class="app-preview-image"><img src="img/app-preview-5.jpg" alt="Studi.App Video Quiz"></div>
-                        <div class="app-info"><h3>Video Quiz</h3><p>Crea cuestionarios interactivos sobre cualquier video.</p></div>
-                        <a href="#" target="_blank" class="app-open-button">Crear Quiz</a>
                     </div>
                 </div>
             </div>
@@ -121,6 +118,11 @@
         </main>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    
+    <!-- Lucide Icons & Custom Script -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="script.js"></script>
 </body>

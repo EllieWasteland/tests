@@ -12,14 +12,15 @@
     --log-success: #4ade80;
     --log-warn: #facc15;
     --log-info: #60a5fa;
+    --error-color: #f87171; /* Color para errores */
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { scrollbar-gutter: stable; }
 body { font-family: var(--font-family-sans); background: #000; color: var(--text-color); min-height: 100vh; overflow-y: hidden; }
 
 /* --- SPLASH SCREEN (REIMAGINADA) --- */
-#splash-screen { position: fixed; inset: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.6s ease-out; overflow: hidden; }
-#splash-screen::before { content: ''; position: absolute; inset: -50px; background: url('img/background.jpg') no-repeat center center/cover; filter: blur(20px); transition: filter 1s ease-out; }
+#splash-screen { position: fixed; inset: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.6s ease-out; overflow: hidden; background: #000; }
+#splash-screen::before { content: ''; position: absolute; inset: -50px; background: url('https://images.unsplash.com/photo-1522441815192-d9f04eb0615c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover; filter: blur(20px); transition: filter 1s ease-out; }
 #splash-screen.focused::before { filter: blur(0px); }
 #splash-screen.exit { opacity: 0; }
 .splash-content { text-align: center; z-index: 1; }
@@ -33,9 +34,9 @@ body { font-family: var(--font-family-sans); background: #000; color: var(--text
 
 /* --- SISTEMA DE LOGIN Y LAYOUT GENERAL --- */
 #login-screen, #app-wrapper { position: absolute; inset: 0; transition: opacity 0.6s ease-out, visibility 0.6s; }
-#login-screen { display: none; justify-content: center; align-items: center; background: url('img/background.jpg') no-repeat center center/cover; }
+#login-screen { display: none; justify-content: center; align-items: center; background: url('https://images.unsplash.com/photo-1522441815192-d9f04eb0615c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover; }
 #login-screen.active { display: flex; }
-#app-wrapper { opacity: 0; visibility: hidden; background: url('img/background.jpg') no-repeat center center/cover; }
+#app-wrapper { opacity: 0; visibility: hidden; background: url('https://images.unsplash.com/photo-1522441815192-d9f04eb0615c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover; }
 #app-wrapper.active { opacity: 1; visibility: visible; }
 .widget { background: var(--bg-color); backdrop-filter: blur(var(--blur-amount)); -webkit-backdrop-filter: blur(var(--blur-amount)); border: 1px solid var(--border-color); padding: 25px; border-radius: 25px; display: flex; flex-direction: column; }
 .top-nav { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; }
@@ -47,10 +48,6 @@ body { font-family: var(--font-family-sans); background: #000; color: var(--text
 .main-container { position: relative; width: 100%; height: 100vh; max-width: 1600px; max-height: 900px; padding-top: 90px; margin: 0 auto; }
 .page-content { display: none; width: 100%; height: calc(100% - 90px); position: absolute; top: 90px; left: 0; padding: 20px 50px; overflow-y: auto; }
 .page-content.active { display: block; }
-
-/* --- CORRECCIÓN DEL PIN INPUT --- */
-.pin-input { -moz-appearance: textfield; }
-.pin-input::-webkit-outer-spin-button, .pin-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* --- GRIDS DE CONTENIDO --- */
 .dashboard-grid { display: grid; grid-template-columns: 320px 1fr 400px; grid-template-rows: auto 1fr; gap: 25px; height: 100%; }
@@ -92,14 +89,42 @@ body { font-family: var(--font-family-sans); background: #000; color: var(--text
 @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: 1fr 1fr; grid-template-rows: auto; } .profile-card { grid-column: 2 / 3; grid-row: 1 / 3; } }
 @media (max-width: 800px) { body { overflow-y: auto; } .top-nav { top: auto; bottom: 0; width: 100%; border-radius: 0; } .nav-glass-container { width: 100%; border-radius: 25px 25px 0 0; } .top-nav .nav-link span { display: none; } .main-container { padding-bottom: 100px; } .page-content { padding: 20px; top: 0; height: auto; } .dashboard-grid { display: flex; flex-direction: column; gap: 20px; } }
 
-/* --- ESTILOS RESTANTES (sin cambios) --- */
+/* --- ESTILOS DE LOGIN ACTUALIZADOS --- */
 @keyframes calm-gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-.login-container { width: 380px; padding: 40px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.login-container { width: 420px; padding: 40px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.login-container h2 { margin-bottom: 10px; }
+.login-container p { color: var(--text-color-secondary); }
 .profile-picture-login { width: 120px; height: 120px; border-radius: 50%; margin-bottom: 20px; border: 4px solid var(--border-color); }
 .profile-picture-login img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.pin-code-inputs { display: flex; gap: 10px; margin: 30px 0 15px; }
-.pin-input { width: 50px; height: 60px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 10px; text-align: center; font-size: 1.8rem; color: var(--text-color); font-weight: 600; }
-.error-message { color: var(--error-color); visibility: hidden; height: 1em; font-size: 0.9rem; }
+
+.google-login-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 12px 30px;
+    margin-top: 30px;
+    border: none;
+    border-radius: 50px;
+    background-color: #fff;
+    color: #333;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.google-login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+.google-login-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+.error-message { color: var(--error-color); visibility: hidden; height: 1em; font-size: 0.9rem; margin-top: 15px; }
 .error-message.show { visibility: visible; }
 .login-container.shake { animation: shake 0.5s ease-in-out; }
 @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }

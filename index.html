@@ -3,766 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vitreum Hub</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
-    
-    <style>
-        /* --- VARIABLES Y ESTILOS GLOBALES --- */
-        :root {
-            --bg-color: rgba(35, 35, 45, 0.4);
-            --border-color: rgba(255, 255, 255, 0.15);
-            --text-color: #f0f0f0;
-            --text-color-secondary: #a0a0b0;
-            --accent-color: #ffc966;
-            --dark-bg: #1e1e28;
-            --font-family-sans: 'Nunito', sans-serif;
-            --font-family-mono: 'Roboto Mono', monospace;
-            --blur-amount: 22px;
-            --log-success: #4ade80;
-            --log-warn: #facc15;
-            --log-info: #60a5fa;
-            --error-color: #f87171;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scrollbar-gutter: stable; }
-        body { font-family: var(--font-family-sans); background: #000; color: var(--text-color); min-height: 100vh; overflow: hidden; }
-
-        /* --- FONDOS Y LAYOUTS PRINCIPALES --- */
-        #onboarding-screen, #login-screen, #setup-screen, #app-wrapper {
-            background: url('https://images.unsplash.com/photo-1522441815192-d9f04eb0615c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover;
-            position: absolute;
-            inset: 0;
-            transition: opacity 0.6s ease-out, visibility 0.6s, background-image 0.8s ease;
-            background-attachment: fixed;
-        }
-
-        #splash-screen { position: fixed; inset: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.6s ease-out; overflow: hidden; background: #000; }
-
-        #onboarding-screen, #login-screen, #setup-screen { display: none; justify-content: center; align-items: center; opacity: 0; }
-        #onboarding-screen.active, #login-screen.active, #setup-screen.active { display: flex; opacity: 1; }
-
-        #app-wrapper { opacity: 0; visibility: hidden; }
-        #app-wrapper.active { opacity: 1; visibility: visible; }
-
-        /* --- SPLASH SCREEN --- */
-        #splash-screen::before { content: ''; position: absolute; inset: -50px; filter: blur(20px); transition: filter 1s ease-out; background: url('https://images.unsplash.com/photo-1522441815192-d9f04eb0615c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover;}
-        #splash-screen.focused::before { filter: blur(0px); }
-        #splash-screen.exit { opacity: 0; }
-        .splash-content { text-align: center; z-index: 1; }
-        .splash-logo { font-size: 4rem; font-weight: 700; letter-spacing: 0.5rem; color: rgba(255,255,255,0.8); filter: blur(4px); opacity: 0; transition: filter 1s ease-out, opacity 1s ease-out, color 1s ease-out; }
-        #splash-screen.visible .splash-logo { opacity: 1; }
-        #splash-screen.focused .splash-logo { filter: blur(0px); color: white; }
-        .loading-text { color: var(--text-color-secondary); margin-top: 20px; opacity: 0; transition: opacity 0.5s ease-out 1s; }
-        #splash-screen.visible .loading-text { opacity: 1; }
-        .focus-wave { position: absolute; top: 0; left: -2%; width: 2px; height: 100%; background-color: rgba(255, 255, 255, 0.8); box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.5); transform: translateX(-50%); animation: wave-scan 2.5s ease-in-out 1s forwards; opacity: 0; }
-        @keyframes wave-scan { from { left: -2%; opacity: 1; } to { left: 102%; opacity: 1; } }
-
-        /* --- WIDGET GENERAL --- */
-        .widget { background: var(--bg-color); backdrop-filter: blur(var(--blur-amount)); -webkit-backdrop-filter: blur(var(--blur-amount)); border: 1px solid var(--border-color); padding: 25px; border-radius: 25px; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .widget:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25); }
-
-        /* --- ONBOARDING --- */
-        #onboarding-screen .onboarding-card { width: 450px; text-align: center; display: none; gap: 20px; padding: 30px; }
-        #onboarding-screen .onboarding-card.active { display: flex; }
-        .onboarding-image-placeholder { width: 100%; height: 180px; border-radius: 15px; background-color: rgba(0,0,0,0.2); margin-bottom: 10px; overflow: hidden; }
-        .onboarding-image-placeholder img { width: 100%; height: 100%; object-fit: cover; }
-        .onboarding-card h3 { font-size: 1.5rem; font-weight: 600; }
-        .onboarding-card p { color: var(--text-color-secondary); line-height: 1.6; }
-        .disclaimer-text { font-size: 0.9rem; }
-        .onboarding-actions { margin-top: 20px; display: flex; gap: 15px; width: 100%; justify-content: center; }
-        .onboarding-btn { border: none; padding: 12px 30px; border-radius: 50px; font-family: var(--font-family-sans); font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; width: 100%; }
-        .onboarding-btn.primary { background-color: var(--accent-color); color: #111; }
-        .onboarding-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(255, 201, 102, 0.2); }
-        .onboarding-btn.secondary { background-color: rgba(255, 255, 255, 0.1); color: var(--text-color); }
-        .onboarding-btn.secondary:hover { background-color: rgba(255, 255, 255, 0.2); }
-
-        /* --- LOGIN & MODAL DE ERROR --- */
-        #login-screen { overflow: hidden; }
-        .login-art-container { position: absolute; inset: 0; z-index: 0; }
-        .login-art-shape { position: absolute; border-radius: 50%; filter: blur(150px); }
-        .login-art-shape.shape1 { width: 400px; height: 400px; background: rgba(100, 100, 255, 0.3); top: 10%; left: 15%; animation: move-shape1 20s infinite alternate ease-in-out; }
-        .login-art-shape.shape2 { width: 350px; height: 350px; background: rgba(255, 100, 150, 0.3); bottom: 10%; right: 15%; animation: move-shape2 25s infinite alternate ease-in-out; }
-        @keyframes move-shape1 { to { transform: translate(100px, 50px) scale(1.2); } }
-        @keyframes move-shape2 { to { transform: translate(-80px, -60px) scale(0.9); } }
-        .login-container { width: 420px; padding: 40px; text-align: center; z-index: 1; }
-        .login-logo { font-size: 2.5rem; font-weight: 700; letter-spacing: 0.3rem; margin-bottom: 10px; }
-        .login-container h2 { font-weight: 500; color: var(--text-color); margin-bottom: 10px; }
-        .login-container p { color: var(--text-color-secondary); margin-bottom: 30px; }
-        .google-login-btn { display: inline-flex; align-items: center; justify-content: center; gap: 15px; padding: 12px 30px; border: none; border-radius: 50px; background-color: #fff; color: #333; font-family: var(--font-family-sans); font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .google-login-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
-        .google-login-btn svg { width: 22px; height: 22px; }
-        
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
-        .modal-overlay.show { opacity: 1; visibility: visible; }
-        .modal-content { background: var(--dark-bg); color: var(--text-color); padding: 30px; border-radius: 20px; text-align: center; width: 90%; max-width: 400px; border: 1px solid var(--border-color); transform: scale(0.95); transition: transform 0.3s ease; }
-        .modal-overlay.show .modal-content { transform: scale(1); }
-        .modal-content h3 { margin-bottom: 15px; font-size: 1.5rem; }
-        .modal-content p { color: var(--text-color-secondary); margin-bottom: 25px; line-height: 1.6; }
-        .modal-btn { border: none; padding: 12px 30px; border-radius: 50px; font-family: var(--font-family-sans); font-weight: 600; font-size: 1rem; cursor: pointer; width: 100%; background-color: var(--accent-color); color: #111; }
-
-        /* --- SETUP SCREEN --- */
-        .setup-container { width: 480px; text-align: center; gap: 20px; }
-        .setup-container h3 { font-size: 1.8rem; }
-        .setup-container p { color: var(--text-color-secondary); margin-top: -15px; }
-        .profile-editor { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; margin-top: 10px; }
-        .profile-pic-label { position: relative; cursor: pointer; }
-        .profile-pic-label img { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--border-color); object-fit: cover; }
-        .profile-pic-label .pic-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; opacity: 0; transition: opacity 0.3s ease; }
-        .profile-pic-label:hover .pic-overlay { opacity: 1; }
-        #profile-pic-input { display: none; }
-        .setup-input { width: 100%; padding: 12px 20px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-color); font-size: 1rem; text-align: center; }
-        .early-access-card { display: flex; align-items: center; gap: 20px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 15px; text-align: left; }
-        .early-access-card .icon-wrapper { color: var(--accent-color); }
-        .early-access-card h4 { margin: 0; font-size: 1rem; }
-        .early-access-card p { margin: 0; font-size: 0.9rem; }
-
-        /* --- LAYOUT PRINCIPAL DE LA APP --- */
-        .top-nav { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; }
-        .nav-glass-container { background: var(--bg-color); backdrop-filter: blur(var(--blur-amount)); border: 1px solid var(--border-color); border-radius: 50px; padding: 5px; }
-        .top-nav ul { list-style: none; display: flex; gap: 5px; }
-        .top-nav .nav-link { display: flex; align-items: center; gap: 8px; padding: 10px 25px; text-decoration: none; color: var(--text-color-secondary); font-weight: 500; border-radius: 50px; transition: all 0.3s ease; }
-        .top-nav .nav-link i { width: 18px; }
-        .top-nav .nav-link.active { color: #111; background: var(--text-color); font-weight: 600; }
-        .main-container { position: relative; width: 100%; height: 100vh; max-width: 1600px; max-height: 900px; margin: 0 auto; }
-        .page-content { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; padding: 90px 50px 20px 50px; overflow-y: auto; }
-        .page-content.active { display: block; }
-        
-        .content-holder {
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid var(--border-color);
-            border-radius: 30px;
-            padding: 25px;
-        }
-        .page-title { font-size: 2rem; font-weight: 700; margin-bottom: 25px; }
-
-        /* --- GRIDS Y WIDGETS --- */
-        .dashboard-grid { display: grid; grid-template-columns: 320px 1fr 400px; grid-template-rows: auto 1fr; gap: 25px; }
-        .apps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
-        .profile-card { grid-column: 3 / 4; grid-row: 1 / 3; }
-        .clock-widget { grid-column: 1 / 2; grid-row: 1 / 2; }
-        .charging-stats { grid-column: 1 / 2; grid-row: 2 / 3; }
-        .updates-widget { grid-column: 2 / 3; grid-row: 1 / 2; background: rgba(10, 10, 15, 0.4); }
-        .mindfulness-stats { grid-column: 2 / 3; grid-row: 2 / 3; }
-        .clock-widget { justify-content: center; align-items: center; text-align: center; }
-        #clock-time { font-size: 5rem; font-weight: 700; line-height: 1; }
-        #clock-date { font-size: 1.2rem; color: var(--text-color-secondary); }
-        .updates-widget pre { font-family: var(--font-family-mono); font-size: 0.9rem; line-height: 1.6; margin: auto 0; }
-        .updates-widget code .log-success { color: var(--log-success); }
-        .updates-widget code .log-warn { color: var(--log-warn); }
-        .updates-widget code .log-info { color: var(--log-info); }
-        .mindfulness-stats { align-items: center; text-align: center; justify-content: space-between; background: linear-gradient(270deg, rgba(83, 88, 133, 0.4), rgba(133, 83, 120, 0.4)); background-size: 400% 400%; animation: calm-gradient 15s ease infinite; }
-        @keyframes calm-gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .start-session-btn { background: rgba(255, 255, 255, 0.1); border: none; color: var(--text-color); padding: 12px 25px; border-radius: 12px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
-        .start-session-btn:hover { background: rgba(255, 255, 255, 0.2); }
-        .profile-card { justify-content: space-between; align-items: center; text-align: center; }
-        
-        .profile-main { margin-top: 20px; display: flex; flex-direction: column; align-items: center; }
-        
-        .profile-info-list { list-style: none; width: 100%; padding: 0 20px; margin: 20px 0; }
-        .profile-info-list li { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
-        .profile-info-list li:last-child { border-bottom: none; }
-        .profile-info-list li span { color: var(--text-color-secondary); }
-        .profile-nav { margin-bottom: 20px; }
-        .app-card { gap: 20px; }
-        .app-preview-image { width: 100%; height: 160px; border-radius: 15px; overflow: hidden; background-color: rgba(0,0,0,0.2); }
-        .app-preview-image img { width: 100%; height: 100%; object-fit: cover; }
-        .app-info h3 { font-size: 1.2rem; }
-        .app-info p { font-size: 0.9rem; color: var(--text-color-secondary); }
-        .app-open-button { background-color: var(--accent-color); color: #111; text-decoration: none; text-align: center; padding: 12px; border-radius: 12px; font-weight: 600; margin-top: auto; transition: transform 0.2s ease; }
-        .app-open-button:hover { transform: translateY(-2px); }
-        .charging-stats .subtitle { color: var(--text-color-secondary); font-size: 0.9rem; margin-top: 5px; }
-        .progress-circle { position: relative; width: 100px; height: 100px; display: flex; justify-content: center; align-items: center; margin: auto; }
-        .progress-circle svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
-        .progress-circle .progress-bg { fill: none; stroke: rgba(255, 255, 255, 0.1); stroke-width: 10; }
-        .progress-circle .progress-bar { fill: none; stroke: var(--accent-color); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; transition: stroke-dashoffset 0.8s ease; }
-        .progress-text { font-size: 1.5rem; font-weight: 600; }
-        .charge-toggle { display: flex; align-items: center; justify-content: space-between; background: rgba(0, 0, 0, 0.2); border-radius: 50px; padding: 5px; margin-top: auto; }
-        .charge-toggle .icon-wrapper { background: var(--accent-color); color: #333; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
-        .charge-toggle span { margin-right: 20px; font-weight: 500; }
-        .stats-grid { display: flex; justify-content: space-around; width: 100%; gap: 10px; }
-        .stat-item { display: flex; flex-direction: column; align-items: center; background: rgba(0, 0, 0, 0.2); padding: 15px 10px; border-radius: 20px; flex-grow: 1; }
-        .stat-item .label { font-size: 0.8rem; color: var(--text-color-secondary); }
-        .stat-item .value { font-size: 1.2rem; font-weight: 600; margin-top: 5px; }
-        .profile-picture { width: 120px; height: 120px; border-radius: 50%; margin-bottom: 15px; position: relative; }
-        .profile-picture::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; background: radial-gradient(circle, var(--accent-color) 40%, transparent 70%); filter: blur(15px); z-index: -1; animation: subtle-pulse 5s infinite ease-in-out; }
-        @keyframes subtle-pulse { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.05); opacity: 1; } }
-        .profile-picture img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid white; }
-        .profile-main h2 { font-size: 1.8rem; font-weight: 500; }
-        .profile-nav { display: flex; gap: 15px; background: rgba(0, 0, 0, 0.2); padding: 10px 20px; border-radius: 30px; }
-        .nav-icon { background: transparent; border: none; color: var(--text-color-secondary); padding: 10px; border-radius: 50%; cursor: pointer; transition: color 0.2s, background-color 0.2s; display: flex; }
-        .nav-icon:hover { color: var(--text-color); background-color: rgba(255,255,255,0.1); }
-
-        /* --- SECCIÓN DE AJUSTES --- */
-        .settings-section { display: flex; flex-direction: column; gap: 25px; }
-        .settings-card { background: var(--bg-color); backdrop-filter: blur(var(--blur-amount)); -webkit-backdrop-filter: blur(var(--blur-amount)); border: 1px solid var(--border-color); padding: 25px; border-radius: 25px; }
-        .settings-card h3 { margin-bottom: 20px; font-weight: 600; }
-        .file-upload-btn { display: flex; align-items: center; justify-content: center; width: 100%; text-align: center; border: none; padding: 12px 20px; border-radius: 10px; font-family: var(--font-family-sans); font-weight: 600; cursor: pointer; transition: all 0.3s ease; background-color: var(--accent-color); color: #111; }
-        .file-upload-btn i { margin-right: 8px; }
-        #background-file-input { display: none; }
-        #mobile-profile-card { display: none; }
-
-        /* --- DISEÑO RESPONSIVO --- */
-        @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: 1fr 1fr; grid-template-rows: auto; } .profile-card { grid-column: 2 / 3; grid-row: 1 / 3; } }
-        
-        @media (max-width: 800px) { 
-            .top-nav { 
-                position: fixed;
-                top: auto; 
-                bottom: 20px; 
-                width: auto; 
-                transform: translateX(-50%); 
-            } 
-            .nav-glass-container { border-radius: 50px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); } 
-            .top-nav .nav-link { padding: 12px; }
-            .top-nav .nav-link span { display: none; }
-            .top-nav .nav-link.active { background: var(--accent-color); color: #111; }
-            .top-nav .nav-link.active i { color: #111; }
-            
-            .main-container { 
-                padding: 0;
-                max-height: none;
-            } 
-            /* <-- CORRECCIÓN: Page-content es ahora el contenedor de scroll */
-            .page-content { 
-                position: absolute;
-                inset: 0;
-                height: 100%;
-                padding: 20px 20px 120px 20px; /* Top, LR, Bottom (para nav bar) */
-                overflow-y: auto;
-            } 
-            .dashboard-grid { display: flex; flex-direction: column; gap: 20px; }
-            
-            .dashboard-grid .profile-card { display: none; }
-            #mobile-profile-card { display: flex; }
-        }
-        
-        @media (max-width: 500px) { 
-            #onboarding-screen .onboarding-card, .login-container, .setup-container { width: 90%; padding: 20px; } 
-            .onboarding-actions { flex-direction: column; } 
-        }
-    </style>
+    <title>Web OS</title>
+    <!-- Tailwind CSS para un diseño rápido y moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google API Libraries with onload callbacks -->
+    <script src="https://apis.google.com/js/api.js?onload=gapiLoaded" async defer></script>
+    <script src="https://accounts.google.com/gsi/client?onload=gisLoaded" async defer></script>
+    <!-- Estilos personalizados y configuración de fuentes -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-    <!-- MODAL DE ERROR DE LOGIN -->
-    <div id="login-error-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h3>Acceso Restringido</h3>
-            <p id="login-error-modal-message">Debes usar una cuenta de correo institucional (@ucuenca.edu.ec) para poder acceder.</p>
-            <button id="login-error-modal-close" class="modal-btn">Entendido</button>
-        </div>
-    </div>
+    <div id="animated-bg" class="zoomed-in"></div>
 
-    <!-- SPLASH SCREEN -->
-    <div id="splash-screen">
-        <div class="splash-content">
-            <h1 class="splash-logo">VITREUM</h1>
-            <p class="loading-text">Inicializando módulos...</p>
-        </div>
-        <div class="focus-wave"></div>
-    </div>
-
-    <!-- ONBOARDING SCREEN -->
-    <div id="onboarding-screen">
-        <div id="welcome-card" class="onboarding-card widget active">
-            <div class="onboarding-image-placeholder">
-                 <img src="https://placehold.co/400x200/3b3b4a/f0f0f0?text=Bienvenido" alt="Imagen de Bienvenida">
-            </div>
-            <h3>Bienvenido a Vitreum Hub</h3>
-            <p>Nuestro objetivo es simplificar y unificar el acceso a los servicios digitales de la Universidad de Cuenca para todos los estudiantes.</p>
-            <div class="onboarding-actions">
-                <button id="next-btn" class="onboarding-btn primary">Siguiente</button>
-            </div>
-        </div>
-        <div id="agreement-card" class="onboarding-card widget">
-            <div class="onboarding-image-placeholder">
-                 <img src="https://placehold.co/400x200/3b3b4a/f0f0f0?text=Acuerdo" alt="Imagen de Acuerdo">
-            </div>
-            <h3>Acuerdo de Usuario</h3>
-            <p class="disclaimer-text">
-                Esta aplicación es un proyecto independiente y <strong>no es una plataforma oficial</strong> de la Universidad de Cuenca. Las marcas y logos utilizados son propiedad de la universidad. Al continuar, aceptas usar esta herramienta bajo tu propia responsabilidad.
-            </p>
-            <div class="onboarding-actions">
-                <button id="deny-btn" class="onboarding-btn secondary">Denegar</button>
-                <button id="accept-btn" class="onboarding-btn primary">Aceptar y Continuar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-        <div class="login-art-container">
-            <div class="login-art-shape shape1"></div>
-            <div class="login-art-shape shape2"></div>
-        </div>
-        <div class="login-container widget">
-            <h1 class="login-logo">VITREUM</h1>
-            <h2>Acceso Estudiantil</h2>
-            <p>Usa tu cuenta institucional para ingresar al ecosistema.</p>
-            <button id="google-login-btn" class="google-login-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.19,4.73C14.03,4.73 15.6,5.36 16.81,6.45L18.87,4.59C17.01,3.01 14.7,2 12.19,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.19,22C17.6,22 21.54,18.33 21.54,12.29C21.54,11.77 21.48,11.44 21.35,11.1Z"/></svg>
-                <span>Seleccionar cuenta de Google</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- SETUP SCREEN -->
-    <div id="setup-screen">
-        <div class="setup-container widget">
-            <h3>Configuración Inicial</h3>
-            <p>Personaliza tu perfil antes de continuar.</p>
-            
-            <div class="profile-editor">
-                <label for="profile-pic-input" class="profile-pic-label">
-                    <img id="setup-profile-pic" src="https://placehold.co/120x120/1e1e28/f0f0f0?text=?" alt="Foto de perfil">
-                    <div class="pic-overlay"><i data-lucide="camera"></i></div>
-                </label>
-                <input type="file" id="profile-pic-input" accept="image/*">
-                <input type="text" id="setup-display-name" class="setup-input" placeholder="Tu nombre para mostrar">
-            </div>
-
-            <div class="early-access-card">
-                <div class="icon-wrapper"><i data-lucide="shield-alert"></i></div>
-                <div class="text-wrapper">
-                    <h4>Acceso Anticipado</h4>
-                    <p>Esta versión es gratuita. Futuras versiones podrían tener funciones premium.</p>
+    <!-- Onboarding Screen -->
+    <div id="onboarding-screen" class="screen fixed inset-0 z-40 flex items-center justify-center p-4">
+        <div class="w-full max-w-sm md:max-w-3xl h-[600px] md:h-[450px] bg-pink-200 rounded-3xl shadow-2xl flex overflow-hidden border border-pink-300 backdrop-blur-md bg-opacity-80">
+            <!-- Onboarding Step 1: Accent Color -->
+            <div id="onboarding-step-1" class="onboarding-step w-full h-full flex flex-col md:flex-row">
+                <div class="w-full h-1/3 md:w-1/3 md:h-full">
+                    <img src="https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=1887&auto=format&fit=crop" class="w-full h-full object-cover rounded-t-3xl md:rounded-l-3xl md:rounded-tr-none" alt="Abstract pink shapes">
+                </div>
+                <div class="w-full h-2/3 md:w-2/3 md:h-full p-6 md:p-8 flex flex-col">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">¡Bienvenido a tu nuevo espacio!</h2>
+                    <p class="text-gray-600 mb-6">Personaliza tu experiencia eligiendo un color de acento que te represente.</p>
+                    <div class="flex-grow flex items-center justify-center gap-4">
+                        <button class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-pink-400 transform hover:scale-110 transition-transform focus:outline-none focus:ring-4 ring-pink-300"></button>
+                        <button class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-rose-400 transform hover:scale-110 transition-transform focus:outline-none focus:ring-4 ring-rose-300"></button>
+                        <button class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-fuchsia-400 transform hover:scale-110 transition-transform focus:outline-none focus:ring-4 ring-fuchsia-300"></button>
+                        <button class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-purple-400 transform hover:scale-110 transition-transform focus:outline-none focus:ring-4 ring-purple-300"></button>
+                        <button class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-indigo-400 transform hover:scale-110 transition-transform focus:outline-none focus:ring-4 ring-indigo-300"></button>
+                    </div>
+                    <button data-next-step="2" class="onboarding-next-btn self-end w-14 h-14 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors shadow-lg flex items-center justify-center transform hover:scale-110">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
                 </div>
             </div>
-
-            <button id="finish-setup-btn" class="onboarding-btn primary">Finalizar y Entrar</button>
+            <!-- Onboarding Step 2: Terms of Use -->
+            <div id="onboarding-step-2" class="onboarding-step w-full h-full flex flex-col md:flex-row absolute inset-0 opacity-0 pointer-events-none">
+                <div class="w-full h-1/3 md:w-1/3 md:h-full">
+                    <img src="https://images.unsplash.com/photo-1614099232631-4516752b6f13?q=80&w=1887&auto=format&fit=crop" class="w-full h-full object-cover rounded-t-3xl md:rounded-l-3xl md:rounded-tr-none" alt="Abstract flowing lines">
+                </div>
+                <div class="w-full h-2/3 md:w-2/3 md:h-full p-6 md:p-8 flex flex-col">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Acuerdos de Uso</h2>
+                    <p class="text-gray-600 mb-4 flex-grow overflow-auto pr-2 text-sm">
+                        Antes de continuar, por favor lee y acepta nuestros términos y condiciones. Este documento describe tus derechos y responsabilidades como usuario de nuestro sistema operativo web. Al hacer clic en "Aceptar y Continuar", confirmas que has leído, entendido y aceptado estar sujeto a estos términos. El uso continuado del servicio constituirá la aceptación de cualquier actualización futura de estos términos. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.
+                    </p>
+                    <button id="finish-onboarding-btn" class="self-end w-14 h-14 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors shadow-lg flex items-center justify-center transform hover:scale-110">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- APP WRAPPER -->
-    <div id="app-wrapper">
-        <nav class="top-nav">
-            <div class="nav-glass-container">
-                <ul>
-                    <li><a href="#" class="nav-link active" data-target="summary-content"><i data-lucide="layout-grid"></i><span>Resumen</span></a></li>
-                    <li><a href="#" class="nav-link" data-target="services-content"><i data-lucide="briefcase"></i><span>Servicios</span></a></li>
-                    <li><a href="#" class="nav-link" data-target="apps-content"><i data-lucide="app-window"></i><span>Apps</span></a></li>
-                    <li><a href="#" class="nav-link" data-target="settings-content"><i data-lucide="settings"></i><span>Ajustes</span></a></li>
-                </ul>
-            </div>
-        </nav>
-        <main class="main-container">
-            <!-- <-- CORRECCIÓN: Título movido dentro del holder -->
-            <div id="summary-content" class="page-content active">
-                <div class="content-holder">
-                    <h1 class="page-title">Resumen</h1>
-                    <div class="dashboard-grid">
-                        <div class="widget clock-widget"><div id="clock-time">17:01</div><div id="clock-date">Tuesday, 24 Oct</div></div>
-                        <div class="widget charging-stats">
-                            <h3>System Status</h3><p class="subtitle">Battery & Performance</p>
-                            <div class="progress-circle" data-progress="85"><svg viewBox="0 0 100 100"><circle class="progress-bg" cx="50" cy="50" r="45"></circle><circle class="progress-bar" cx="50" cy="50" r="45"></circle></svg><span class="progress-text">85%</span></div>
-                            <div class="charge-toggle"><div class="icon-wrapper"><i data-lucide="zap"></i></div><span>Optimal</span></div>
-                        </div>
-                        <div class="widget updates-widget">
-                            <h3>Últimas Actualizaciones</h3>
-                            <pre><code>[<span class="log-success">OK</span>] Studi.App v2.1 deployed
-[<span class="log-info">INFO</span>] Orion tasks updated
-[<span class="log-warn">WARN</span>] API latency detected
-> Vitreum Hub v1.0.0 stable</code></pre>
-                        </div>
-                        <div class="widget mindfulness-stats">
-                            <h3>Mindfulness</h3><p class="subtitle">Quantum Calm</p>
-                            <div class="stats-grid"><div class="stat-item"><span class="label">Breath</span><span class="value">14/min</span></div><div class="stat-item"><span class="label">Sleep</span><span class="value">8.1h</span></div><div class="stat-item"><span class="label">Flow</span><span class="value">86%</span></div></div>
-                            <button class="start-session-btn">Iniciar Sesión</button>
-                        </div>
-                        <div class="widget profile-card">
-                            <div class="profile-main">
-                                <div class="profile-picture">
-                                    <img class="user-profile-pic" src="https://placehold.co/120x120/ffffff/1e1e28?text=U" alt="User's profile picture">
-                                </div>
-                                <h2 class="user-display-name">Usuario</h2>
-                            </div>
-                            <ul class="profile-info-list">
-                                <li><span>Email</span><strong class="user-email">correo@ejemplo.com</strong></li>
-                                <li><span>U. Educativa</span><strong>U. de Cuenca</strong></li>
-                                <li><span>Membresía</span><strong class="user-license log-success">Acceso Anticipado</strong></li>
-                            </ul>
-                            <div class="profile-nav">
-                                <button id="logout-btn" class="nav-icon" title="Cerrar Sesión"><i data-lucide="log-out"></i></button>
-                                <button class="nav-icon" title="Modo Foco"><i data-lucide="monitor-smartphone"></i></button>
-                                <a href="https://gemini.google.com/" target="_blank" class="nav-icon" title="Abrir Google Gemini"><i data-lucide="sparkles"></i></a>
-                            </div>
-                        </div>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none">
+        <div class="relative w-full max-w-sm h-[500px]">
+            <!-- Step 1: Choice -->
+            <div id="login-step-1" class="login-step w-full h-full absolute top-0 left-0">
+                <div class="w-full h-full p-8 bg-pink-200 rounded-3xl shadow-2xl flex flex-col items-center justify-center border border-pink-300 backdrop-blur-md bg-opacity-80">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">¿Cómo quieres empezar?</h2>
+                    <p class="text-gray-600 mb-8 text-center">Tus datos, a tu manera.</p>
+                    <div class="w-full grid grid-cols-2 gap-4">
+                        <button id="google-login-choice-btn" class="h-48 flex flex-col justify-between items-center bg-white/50 hover:bg-white/80 transition-all p-4 rounded-2xl shadow-md border border-white/60 transform hover:scale-105">
+                            <span class="font-semibold text-gray-700">Cargando API...</span>
+                            <svg class="w-16 h-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.8c3.3 0 5.8 1.4 7.6 3.1l5.8-5.8C34.2 4.1 29.6 2 24 2 14.8 2 7.3 7.8 4 15.9l7 5.4c1.4-4.2 5.3-7.5 9.9-7.5z"/><path fill="#34A853" d="M24 46c5.5 0 10.2-1.9 13.6-5.1l-6.6-5.1c-1.8 1.2-4.1 2-6.9 2-4.6 0-8.5-3.3-9.9-7.5l-7 5.4C7.3 40.2 14.8 46 24 46z"/><path fill="#FBBC05" d="M14.1 28.2c-.5-1.5-.7-3.1-.7-4.8s.2-3.3.7-4.8l-7-5.4C5.5 16.4 4 20 4 24c0 4 .5 7.6 1.9 11.2l7.2-5.8z"/><path fill="#EA4335" d="M24 17.3c2.6 0 4.7.9 6.2 2.3l6-6C33.3 10.8 29.1 9 24 9c-8.2 0-15.2 5.7-18.1 13.5L13 28c1.3-4.4 5.3-7.7 11-7.7z"/><path fill="none" d="M2 2h44v44H2z"/></svg>
+                        </button>
+                        <button id="offline-login-choice-btn" class="h-48 flex flex-col justify-between items-center bg-white/50 hover:bg-white/80 transition-all p-4 rounded-2xl shadow-md border border-white/60 transform hover:scale-105">
+                             <span class="font-semibold text-gray-700">Sin conexión</span>
+                            <svg class="w-16 h-16 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        </button>
                     </div>
                 </div>
             </div>
-            <div id="apps-content" class="page-content">
-                <div class="content-holder">
-                    <h1 class="page-title">Ecosistema Vitreum</h1>
-                    <div class="apps-grid">
-                        <div class="widget app-card">
-                            <div class="app-preview-image"><img src="https://placehold.co/400x200/333/fff?text=Studi.App" alt="Studi.App Builder"></div>
-                            <div class="app-info"><h3>Studi.App Builder</h3><p>Crea y personaliza recursos educativos interactivos.</p></div>
-                            <a href="#" target="_blank" class="app-open-button">Abrir Builder</a>
-                        </div>
-                        <div class="widget app-card">
-                            <div class="app-preview-image"><img src="https://placehold.co/400x200/444/fff?text=QuantumNotes" alt="QuantumNotes"></div>
-                            <div class="app-info"><h3>QuantumNotes</h3><p>Toma de apuntes inteligente con IA integrada.</p></div>
-                            <a href="#" target="_blank" class="app-open-button">Abrir Notas</a>
-                        </div>
+            <!-- Step 2: Username & Photo -->
+            <div id="login-step-2" class="login-step w-full h-full absolute top-0 left-0 opacity-0 pointer-events-none">
+                 <div class="w-full h-full p-8 bg-pink-200 rounded-3xl shadow-2xl flex flex-col justify-between border border-pink-300 backdrop-blur-md bg-opacity-80">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">Crea tu perfil</h2>
+                        <p class="text-gray-600 mb-8 text-center">Añade un nombre y una foto.</p>
                     </div>
-                </div>
-            </div>
-            <div id="services-content" class="page-content">
-                <div class="content-holder">
-                    <h1 class="page-title">Servicios Universitarios</h1>
-                    <div class="apps-grid">
-                        <div class="widget app-card">
-                            <div class="app-preview-image"><img src="https://placehold.co/400x200/536DFE/fff?text=Correo" alt="Correo Institucional"></div>
-                            <div class="app-info"><h3>Correo Institucional</h3><p>Acceso directo a tu bandeja de entrada de Outlook.</p></div>
-                            <a href="#" target="_blank" class="app-open-button">Abrir Correo</a>
-                        </div>
-                        <div class="widget app-card">
-                            <div class="app-preview-image"><img src="https://placehold.co/400x200/E91E63/fff?text=SGA" alt="SGA"></div>
-                            <div class="app-info"><h3>SGA / Moodle</h3><p>Consulta tus notas, materias y recursos académicos.</p></div>
-                            <a href="#" target="_blank" class="app-open-button">Ir al SGA</a>
-                        </div>
-                         <div class="widget app-card">
-                            <div class="app-preview-image"><img src="https://placehold.co/400x200/009688/fff?text=Biblioteca" alt="Biblioteca"></div>
-                            <div class="app-info"><h3>Biblioteca Virtual</h3><p>Busca y accede a la base de datos de la biblioteca.</p></div>
-                            <a href="#" target="_blank" class="app-open-button">Buscar Libros</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div id="settings-content" class="page-content">
-                <div class="content-holder">
-                    <h1 class="page-title">Ajustes</h1>
-                    <div class="settings-section">
-                        <div id="mobile-profile-card" class="widget profile-card">
-                             <div class="profile-main">
-                                <div class="profile-picture">
-                                    <img class="user-profile-pic" src="https://placehold.co/120x120/ffffff/1e1e28?text=U" alt="User's profile picture">
-                                </div>
-                                <h2 class="user-display-name">Usuario</h2>
-                            </div>
-                            <ul class="profile-info-list">
-                                <li><span>Email</span><strong class="user-email">correo@ejemplo.com</strong></li>
-                                <li><span>U. Educativa</span><strong>U. de Cuenca</strong></li>
-                                <li><span>Membresía</span><strong class="user-license log-success">Acceso Anticipado</strong></li>
-                            </ul>
-                            <div class="profile-nav">
-                                <button class="nav-icon logout-btn-mobile" title="Cerrar Sesión"><i data-lucide="log-out"></i></button>
-                                <button class="nav-icon" title="Modo Foco"><i data-lucide="monitor-smartphone"></i></button>
-                                <a href="https://gemini.google.com/" target="_blank" class="nav-icon" title="Abrir Google Gemini"><i data-lucide="sparkles"></i></a>
-                            </div>
-                        </div>
-                        
-                        <div class="settings-card">
-                            <h3>Personalizar Fondo</h3>
-                            <p style="color: var(--text-color-secondary); margin-bottom: 15px;">Elige una imagen de tu dispositivo para usarla como fondo.</p>
-                            <label for="background-file-input" class="file-upload-btn">
-                                <i data-lucide="image"></i>
-                                Seleccionar Imagen
+                    <form id="username-form" class="w-full flex flex-col items-center">
+                        <div class="relative mb-6">
+                            <img id="profile-pic-preview" src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="Foto de perfil" class="w-32 h-32 rounded-full object-cover shadow-lg border-4 border-white/50">
+                            <label for="profile-pic-input" class="absolute bottom-0 right-0 w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-pink-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>
                             </label>
-                            <input type="file" id="background-file-input" accept="image/*">
+                            <input id="profile-pic-input" type="file" class="hidden" accept="image/*">
+                        </div>
+                        <input id="username-input" type="text" placeholder="Escribe tu nombre aquí" class="w-full text-center bg-white/70 border border-pink-200 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700" required>
+                    </form>
+                    <button id="username-submit-btn" class="self-end w-14 h-14 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors shadow-lg flex items-center justify-center transform hover:scale-110">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Step 3: PIN -->
+            <div id="login-step-3" class="login-step w-full h-full absolute top-0 left-0 opacity-0 pointer-events-none">
+                 <div class="w-full h-full p-8 bg-pink-200 rounded-3xl shadow-2xl flex flex-col justify-center border border-pink-300 backdrop-blur-md bg-opacity-80">
+                    <div>
+                        <h2 id="pin-greeting" class="text-2xl font-bold text-gray-800 mb-2 text-center">Crea tu PIN</h2>
+                        <p id="pin-subtitle" class="text-gray-600 mb-8 text-center">Un PIN de 4 dígitos para tu seguridad.</p>
+                        <div id="pin-dots-container" class="flex justify-center gap-4 mb-8">
+                            <div class="pin-display-dot w-4 h-4 bg-white/50 rounded-full"></div>
+                            <div class="pin-display-dot w-4 h-4 bg-white/50 rounded-full"></div>
+                            <div class="pin-display-dot w-4 h-4 bg-white/50 rounded-full"></div>
+                            <div class="pin-display-dot w-4 h-4 bg-white/50 rounded-full"></div>
                         </div>
                     </div>
+                    <div id="pin-keypad" class="grid grid-cols-3 gap-4 w-max mx-auto">
+                        <!-- Keypad buttons will be generated by JS -->
+                    </div>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Element -->
+    <div id="notification" class="fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-md transform translate-x-[120%] transition-transform duration-300">
+        Sync complete!
+    </div>
+
+
+    <!-- Main App Content -->
+    <div id="main-content" class="opacity-0 pointer-events-none">
+        <main id="desktop" class="h-screen w-screen relative p-4 md:p-6">
+            <div id="app-window" class="hidden absolute bg-pink-50 rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-pink-200">
+                <header class="bg-pink-100 px-4 py-2 flex items-center justify-between border-b border-pink-200 cursor-move">
+                    <div class="flex items-center gap-2">
+                        <div id="window-icon" class="w-6 h-6"></div>
+                        <h2 id="window-title" class="font-semibold text-gray-800">Nombre de la App</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="maximize-window-btn" class="w-6 h-6 bg-green-300 rounded-full hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-green-200 transition-colors flex items-center justify-center"></button>
+                        <button id="close-window-btn" class="w-6 h-6 bg-red-400 rounded-full hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-300 transition-colors"></button>
+                    </div>
+                </header>
+                <div class="flex-grow rounded-b-2xl overflow-hidden flex items-center justify-center">
+                    <div id="loader" class="spinner">
+                        <div></div><div></div><div></div><div></div><div></div><div></div>
+                    </div>
+                    <iframe id="app-content-frame" src="about:blank" class="w-full h-full border-none app-content hidden" title="App Content"></iframe>
                 </div>
             </div>
         </main>
+        
+        <div id="start-menu" class="hidden absolute bottom-20 left-4 w-96 h-[480px] bg-pink-100 rounded-2xl shadow-2xl p-4 flex flex-col justify-start border border-pink-200">
+            <h2 id="greeting" class="text-3xl font-bold text-gray-800 text-center mb-4 animate-on-show"></h2>
+            <div class="relative flex items-center justify-center mx-auto animate-on-show" style="--s: 220px;">
+                <div class="wavy-circle-spinner shadow-md"></div>
+                <img id="start-menu-avatar" src="https://i.pravatar.cc/180?u=eleanor" alt="User Avatar" class="absolute w-[180px] h-[180px] rounded-full object-cover shadow-lg border-4 border-pink-100">
+            </div>
+            <div class="flex-grow animate-on-show"></div>
+            <div class="flex items-center justify-center gap-3 w-full animate-on-show">
+                <button class="w-12 h-12 bg-pink-200 hover:bg-pink-300 transition rounded-full flex items-center justify-center text-pink-700 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                </button>
+                <button class="w-12 h-12 bg-pink-200 hover:bg-pink-300 transition rounded-full flex items-center justify-center text-pink-700 shadow-sm">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+                <button id="sync-cloud-btn" class="px-5 py-3 bg-pink-200 hover:bg-pink-300 transition rounded-full flex items-center justify-center text-pink-700 shadow-sm text-sm font-semibold">Sincronizar en la nube</button>
+                <button class="px-5 py-3 bg-pink-200 hover:bg-pink-300 transition rounded-full flex items-center justify-center text-pink-700 shadow-sm text-sm font-semibold">Apps</button>
+                <button class="px-5 py-3 bg-pink-200 hover:bg-pink-300 transition rounded-full flex items-center justify-center text-pink-700 shadow-sm text-sm font-semibold">Perfil</button>
+            </div>
+        </div>
+
+        <nav class="fixed bottom-4 left-4 right-4 bg-pink-200 px-3 py-2 rounded-full shadow-lg border border-pink-300">
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-3">
+                    <button id="start-btn" class="pulsating-btn w-10 h-10 bg-white rounded-full shadow-lg focus:outline-none focus:ring-4 focus:ring-white/50 bg-cover bg-center" style="background-image: url('https://i.pravatar.cc/40?u=eleanor')"></button>
+                    <div class="w-px h-6 bg-pink-300"></div>
+                    <div class="flex items-center gap-3">
+                        <button class="app-icon w-10 h-10 bg-rose-400 rounded-full flex items-center justify-center text-white text-xl shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-rose-300" data-url="https://www.wikipedia.org/" data-title="Navegador" data-icon-svg='<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>'></button>
+                        <button class="app-icon w-10 h-10 bg-fuchsia-400 rounded-full flex items-center justify-center text-white text-xl shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-fuchsia-300" data-url="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M" data-title="Música" data-icon-svg='<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>'></button>
+                        <button class="app-icon w-10 h-10 bg-purple-400 rounded-full flex items-center justify-center text-white text-xl shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-purple-300" data-url="https://www.bing.com/" data-title="Archivos" data-icon-svg='<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>'></button>
+                        <button class="app-icon w-10 h-10 bg-indigo-400 rounded-full flex items-center justify-center text-white text-xl shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-indigo-300" data-url="https://duckduckgo.com/" data-title="Ajustes" data-icon-svg='<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>'></button>
+                    </div>
+                </div>
+                <div id="clock-container">
+                    <div id="clock" class="bg-pink-100 text-gray-800 text-sm font-semibold px-4 py-1.5 rounded-full"></div>
+                </div>
+            </div>
+        </nav>
     </div>
-
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Lógica de la Aplicación -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            // --- CONFIGURACIÓN DE FIREBASE ---
-            const firebaseConfig = {
-                apiKey: "AIzaSyB1W2yLlVHivzBQPZJVOgpApQeYnJUFzCs",
-                authDomain: "vitreumucuencahub.firebaseapp.com",
-                projectId: "vitreumucuencahub",
-                storageBucket: "vitreumucuencahub.firebasestorage.app",
-                messagingSenderId: "628136581064",
-                appId: "1:628136581064:web:9ba793a7dfc104602fd2fd"
-            };
-
-            // --- INICIALIZACIÓN DE FIREBASE ---
-            firebase.initializeApp(firebaseConfig);
-            const auth = firebase.auth();
-            const provider = new firebase.auth.GoogleAuthProvider();
-
-            // --- SELECTORES DE ELEMENTOS DEL DOM ---
-            const splashScreen = document.getElementById('splash-screen');
-            const onboardingScreen = document.getElementById('onboarding-screen');
-            const loginScreen = document.getElementById('login-screen');
-            const setupScreen = document.getElementById('setup-screen');
-            const appWrapper = document.getElementById('app-wrapper');
-            const loginErrorModal = document.getElementById('login-error-modal');
-            let currentUserData = {};
-
-            // --- MÓDULO DE INICIALIZACIÓN PRINCIPAL ---
-            function initializeApp() {
-                lucide.createIcons();
-                startClock();
-                animateProgressBars();
-                setupNavigation();
-                setupActionButtons();
-                setupBackgroundChanger();
-                loadCustomBackground();
-                setupModal();
-                determineInitialFlow();
-            }
-
-            // --- LÓGICA DE FLUJO INICIAL ---
-            function determineInitialFlow() {
-                setTimeout(() => splashScreen.classList.add('visible'), 500);
-                setTimeout(() => splashScreen.classList.add('focused'), 2000);
-
-                setTimeout(() => {
-                    splashScreen.classList.add('exit');
-                    setTimeout(() => {
-                        splashScreen.style.display = 'none';
-                        
-                        auth.onAuthStateChanged(user => {
-                            const onboardingComplete = localStorage.getItem('vitreumHubOnboardingComplete');
-                            if (onboardingComplete !== 'true') {
-                                transitionTo(onboardingScreen);
-                                setupOnboarding();
-                                return;
-                            }
-
-                            if (user) {
-                                if (!user.email.endsWith('@ucuenca.edu.ec')) {
-                                    auth.signOut();
-                                    showLoginErrorModal();
-                                    transitionTo(loginScreen);
-                                    setupLogin();
-                                    return;
-                                }
-
-                                const setupComplete = localStorage.getItem(`vitreumHubSetupComplete_${user.uid}`);
-                                if (setupComplete === 'true') {
-                                    loadUserFromStorage(user);
-                                    updateUIForUser(currentUserData);
-                                    transitionTo(appWrapper);
-                                } else {
-                                    currentUserData = { displayName: user.displayName, photoURL: user.photoURL, email: user.email, uid: user.uid };
-                                    transitionTo(setupScreen);
-                                    setupInitialConfig();
-                                }
-                            } else {
-                                transitionTo(loginScreen);
-                                setupLogin();
-                            }
-                        });
-                    }, 600);
-                }, 3000);
-            }
-
-            // --- MANEJO DE TRANSICIONES Y MODAL ---
-            function transitionTo(activeScreen) {
-                [onboardingScreen, loginScreen, setupScreen, appWrapper].forEach(screen => {
-                    screen.classList.remove('active');
-                });
-                if (activeScreen) {
-                    activeScreen.classList.add('active');
-                }
-            }
-            
-            function showLoginErrorModal() {
-                if (loginErrorModal) loginErrorModal.classList.add('show');
-            }
-
-            function setupModal() {
-                const closeBtn = document.getElementById('login-error-modal-close');
-                if(closeBtn) {
-                    closeBtn.addEventListener('click', () => {
-                        loginErrorModal.classList.remove('show');
-                    });
-                }
-            }
-
-            // --- MANEJO DEL ONBOARDING ---
-            function setupOnboarding() {
-                const nextBtn = document.getElementById('next-btn');
-                const acceptBtn = document.getElementById('accept-btn');
-                const denyBtn = document.getElementById('deny-btn');
-
-                nextBtn.addEventListener('click', () => {
-                    document.getElementById('welcome-card').classList.remove('active');
-                    document.getElementById('agreement-card').classList.add('active');
-                });
-                
-                acceptBtn.addEventListener('click', () => {
-                    localStorage.setItem('vitreumHubOnboardingComplete', 'true');
-                    transitionTo(loginScreen);
-                    setupLogin();
-                });
-
-                denyBtn.addEventListener('click', () => {
-                    alert("Debes aceptar los términos para poder usar la aplicación.");
-                });
-            }
-
-            // --- MÓDULO DE LOGIN CON GOOGLE ---
-            function setupLogin() {
-                const googleLoginBtn = document.getElementById('google-login-btn');
-                const newBtn = googleLoginBtn.cloneNode(true);
-                googleLoginBtn.parentNode.replaceChild(newBtn, googleLoginBtn);
-
-                newBtn.addEventListener('click', () => {
-                    auth.signInWithPopup(provider).catch(error => {
-                        console.error("Error de login:", error);
-                        showLoginErrorModal();
-                    });
-                });
-            }
-
-            // --- MANEJO DE CONFIGURACIÓN INICIAL ---
-            function setupInitialConfig() {
-                const setupProfilePic = document.getElementById('setup-profile-pic');
-                const setupDisplayName = document.getElementById('setup-display-name');
-                const profilePicInput = document.getElementById('profile-pic-input');
-                const finishSetupBtn = document.getElementById('finish-setup-btn');
-
-                setupProfilePic.src = currentUserData.photoURL || 'https://placehold.co/120x120/1e1e28/f0f0f0?text=?';
-                setupDisplayName.value = currentUserData.displayName;
-
-                profilePicInput.onchange = (event) => {
-                    const file = event.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => { setupProfilePic.src = e.target.result; };
-                        reader.readAsDataURL(file);
-                    }
-                };
-
-                finishSetupBtn.onclick = () => {
-                    const user = auth.currentUser;
-                    if (user) {
-                        currentUserData.displayName = setupDisplayName.value;
-                        currentUserData.photoURL = setupProfilePic.src;
-                        
-                        localStorage.setItem(`vitreumHubSetupComplete_${user.uid}`, 'true');
-                        localStorage.setItem(`vitreumHubDisplayName_${user.uid}`, currentUserData.displayName);
-                        if (currentUserData.photoURL.startsWith('data:image')) {
-                            localStorage.setItem(`vitreumHubPhotoURL_${user.uid}`, currentUserData.photoURL);
-                        }
-
-                        updateUIForUser(currentUserData);
-                        transitionTo(appWrapper);
-                    }
-                };
-            }
-            
-            // --- MANEJO DE DATOS DE USUARIO ---
-            function loadUserFromStorage(user) {
-                 currentUserData = {
-                    displayName: localStorage.getItem(`vitreumHubDisplayName_${user.uid}`) || user.displayName,
-                    photoURL: localStorage.getItem(`vitreumHubPhotoURL_${user.uid}`) || user.photoURL,
-                    email: user.email,
-                    uid: user.uid
-                };
-            }
-
-            function updateUIForUser(userData) {
-                if (!userData) return;
-                document.querySelectorAll('.user-profile-pic').forEach(el => el.src = userData.photoURL);
-                document.querySelectorAll('.user-display-name').forEach(el => el.textContent = userData.displayName);
-                document.querySelectorAll('.user-email').forEach(el => el.textContent = userData.email);
-            }
-
-            // --- ACCIONES (NAVEGACIÓN Y LOGOUT) ---
-            function setupNavigation() {
-                const navLinks = document.querySelectorAll('.nav-link');
-                navLinks.forEach(link => {
-                    link.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const targetId = link.getAttribute('data-target');
-                        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
-                        link.classList.add('active');
-                        const targetPage = document.getElementById(targetId);
-                        if(targetPage) {
-                            targetPage.classList.add('active');
-                            targetPage.scrollTo(0, 0); // Scroll al inicio de la página al cambiar
-                        }
-                    });
-                });
-            }
-            
-            function handleLogout() {
-                auth.signOut().then(() => {
-                    document.body.style.opacity = '0';
-                    setTimeout(() => location.reload(), 500);
-                });
-            }
-
-            function setupActionButtons() {
-                document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
-                document.querySelector('.logout-btn-mobile')?.addEventListener('click', handleLogout);
-            }
-
-            // --- NUEVAS FUNCIONES DE UI ---
-            function loadCustomBackground() {
-                const customBg = localStorage.getItem('vitreumHubCustomBackground');
-                if (customBg) {
-                    appWrapper.style.backgroundImage = `url('${customBg}')`;
-                }
-            }
-
-            function setupBackgroundChanger() {
-                const bgFileInput = document.getElementById('background-file-input');
-                if (bgFileInput) {
-                    bgFileInput.addEventListener('change', (e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                                const newBgDataUrl = event.target.result;
-                                appWrapper.style.backgroundImage = `url('${newBgDataUrl}')`;
-                                localStorage.setItem('vitreumHubCustomBackground', newBgDataUrl);
-                            };
-                            reader.readAsDataURL(file);
-                        }
-                    });
-                }
-            }
-
-            // --- MÓDULOS DE UI ---
-            function startClock() {
-                const timeEl = document.getElementById('clock-time');
-                const dateEl = document.getElementById('clock-date');
-                if (!timeEl || !dateEl) return;
-                function updateClock() {
-                    const now = new Date();
-                    timeEl.textContent = now.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: false });
-                    dateEl.textContent = now.toLocaleDateString('es-EC', { weekday: 'long', day: 'numeric', month: 'short' });
-                }
-                updateClock();
-                setInterval(updateClock, 1000);
-            }
-            
-            function animateProgressBars() {
-                document.querySelectorAll('.progress-circle').forEach(circle => {
-                    const bar = circle.querySelector('.progress-bar');
-                    const progress = circle.dataset.progress;
-                    if (bar && progress) {
-                        const r = bar.r.baseVal.value;
-                        const circumference = 2 * Math.PI * r;
-                        bar.style.strokeDashoffset = circumference * (1 - progress / 100);
-                    }
-                });
-            }
-
-            initializeApp();
-        });
-    </script>
+    <script type="module" src="main.js"></script>
 </body>
 </html>
+

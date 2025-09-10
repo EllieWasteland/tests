@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Evita el scroll */
+        }
+
+        /* --- Estilos de Inicio y Onboarding --- */
+        .screen, .login-step {
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #main-content {
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1) 0.5s;
+        }
+
+        #animated-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -10;
+            background-image: url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), filter 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #animated-bg.zoomed-in {
+            transform: scale(1.4);
+            filter: blur(12px);
+        }
+
+        .onboarding-step {
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        /* --- Fin de Estilos de Inicio --- */
+
+        .app-content::-webkit-scrollbar { width: 8px; }
+        .app-content::-webkit-scrollbar-track { background: #f1f1f1; }
+        .app-content::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        .app-content::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        #app-window { 
+            /* Las transiciones se manejarán dinámicamente con JS para la animación */
+        }
+        /* Oculta el contenido de la ventana durante la animación para un look más limpio */
+        .window-animating > * { 
+            opacity: 0; 
+            transition: opacity 0.2s ease-in-out; 
+        }
+        #app-window.is-maximized { 
+            top: 1rem; 
+            left: 1rem; 
+            right: 1rem; 
+            bottom: 1rem; 
+        }
+        nav { 
+            transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.4s ease; 
+        }
+        body.window-maximized nav { 
+            transform: translateY(150%); 
+            opacity: 0; 
+            pointer-events: none; 
+        }
+        
+        .pulsating-btn { animation: pulse 2.5s infinite cubic-bezier(0.4, 0, 0.6, 1); }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
+        }
+        
+        .spinner {
+            width: 44px; height: 44px; animation: spinner-y0fdc1 2s infinite ease; transform-style: preserve-3d;
+        }
+        .spinner > div {
+            background-color: rgba(236, 72, 153, 0.2); height: 100%; position: absolute; width: 100%; border: 2px solid #ec4899;
+        }
+        .spinner div:nth-of-type(1) { transform: translateZ(-22px) rotateY(180deg); }
+        .spinner div:nth-of-type(2) { transform: rotateY(-270deg) translateX(50%); transform-origin: top right; }
+        .spinner div:nth-of-type(3) { transform: rotateY(270deg) translateX(-50%); transform-origin: center left; }
+        .spinner div:nth-of-type(4) { transform: rotateX(90deg) translateY(-50%); transform-origin: top center; }
+        .spinner div:nth-of-type(5) { transform: rotateX(-90deg) translateY(50%); transform-origin: bottom center; }
+        .spinner div:nth-of-type(6) { transform: translateZ(22px); }
+        @keyframes spinner-y0fdc1 {
+            0% { transform: rotate(45deg) rotateX(-25deg) rotateY(25deg); }
+            50% { transform: rotate(45deg) rotateX(-385deg) rotateY(25deg); }
+            100% { transform: rotate(45deg) rotateX(-385deg) rotateY(385deg); }
+        }
+
+        #start-menu {
+            transform-origin: bottom left; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        }
+        #start-menu:not(.visible) { transform: scale(0.95) translateY(10px); opacity: 0; pointer-events: none; }
+        #start-menu.visible { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+        
+        .wavy-circle-spinner {
+          --s: 220px; width: var(--s); aspect-ratio: 1; background: #ec4899;
+          --g:/calc(var(--s)*0.209) calc(var(--s)*0.209) radial-gradient(50% 50%,#000 99%,#0000 101%) no-repeat;
+          mask: calc(50% + var(--s)*0.37) calc(50% + var(--s)*0) var(--g),calc(50% + var(--s)*0.311) calc(50% + var(--s)*0.2) var(--g),calc(50% + var(--s)*0.154) calc(50% + var(--s)*0.337) var(--g),calc(50% + var(--s)*-0.053) calc(50% + var(--s)*0.366) var(--g),calc(50% + var(--s)*-242) calc(50% + var(--s)*0.28) var(--g),calc(50% + var(--s)*-0.355) calc(50% + var(--s)*0.104) var(--g),calc(50% + var(--s)*-0.355) calc(50% + var(--s)*-0.104) var(--g),calc(50% + var(--s)*-0.242) calc(50% + var(--s)*-0.28) var(--g),calc(50% + var(--s)*-0.053) calc(50% + var(--s)*-0.366) var(--g),calc(50% + var(--s)*0.154) calc(50% + var(--s)*-0.337) var(--g),calc(50% + var(--s)*0.311) calc(50% + var(--s)*-0.2) var(--g),radial-gradient(calc(var(--s)*0.448),#000 99%,#0000 101%) subtract,calc(50% + var(--s)*0.514) calc(50% + var(--s)*0.151) var(--g),calc(50% + var(--s)*0.351) calc(50% + var(--s)*0.405) var(--g),calc(50% + var(--s)*0.076) calc(50% + var(--s)*0.53) var(--g),calc(50% + var(--s)*-0.223) calc(50% + var(--s)*0.487) var(--g),calc(50% + var(--s)*-0.451) calc(50% + var(--s)*0.29) var(--g),calc(50% + var(--s)*-0.536) calc(50% + var(--s)*0) var(--g),calc(50% + var(--s)*-0.451) calc(50% + var(--s)*-0.29) var(--g),calc(50% + var(--s)*-0.223) calc(50% + var(--s)*-0.487) var(--g),calc(50% + var(--s)*0.076) calc(50% + var(--s)*-0.53) var(--g),calc(50% + var(--s)*0.351) calc(50% + var(--s)*-0.405) var(--g),calc(50% + var(--s)*0.514) calc(50% + var(--s)*-0.151) var(--g);
+          animation: slow-rotate 60s linear infinite;
+        }
+        @keyframes slow-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        #start-menu.visible .animate-on-show { animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards; }
+        #start-menu.visible .animate-on-show:nth-child(1) { animation-delay: 0.1s; }
+        #start-menu.visible .animate-on-show:nth-child(2) { animation-delay: 0.2s; }
+        #start-menu.visible .animate-on-show:nth-child(3) { animation-delay: 0.3s; }
+        #start-menu.visible .animate-on-show:nth-child(4) { animation-delay: 0.4s; }
+        
+        .pin-display-dot {
+            transition: background-color 0.2s ease-in-out;
+        }
+        .pin-keypad-btn {
+            -webkit-tap-highlight-color: transparent; /* Evita el destello azul en móviles */
+        }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+          40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        .shake {
+          animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        }

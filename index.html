@@ -96,41 +96,43 @@
         @keyframes slideInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes popIn { 0% { opacity: 0; transform: scale(0.5); } 80% { opacity: 1; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
         @keyframes float { 0% { transform: translateY(0) translateX(0) scale(1) rotate(0deg); } 25% { transform: translateY(-30px) translateX(20px) scale(1.1) rotate(20deg); } 50% { transform: translateY(20px) translateX(-30px) scale(0.9) rotate(-10deg); } 75% { transform: translateY(-10px) translateX(40px) scale(1) rotate(15deg); } 100% { transform: translateY(0) translateX(0) scale(1) rotate(0deg); } }
+        @keyframes final-pop { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
         
         .animated-item { opacity: 0; }
-        .current .animated-item { animation: slideInUp 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-        .current .animated-icon { animation: popIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-
+        /* ANIMACIÓN MEJORADA: Usamos un cubic-bezier con más 'rebote' */
+        .current .animated-item { animation: slideInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .current .animated-icon { animation: popIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        
         #steps-container { flex: 1; position: relative; overflow: hidden; }
-        .step { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: flex; flex-direction: column; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .step { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: flex; flex-direction: column; transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
         .step.future { transform: translateX(100%); }
         .step.past { transform: translateX(-100%); }
         .step.current { transform: translateX(0); }
-        .progress-bar-fill { transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .progress-bar-fill { transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Animación para el ícono de WiFi de Windows */
+        #wifi-icon-anim .wifi-symbol { animation: pulse-wifi 2s infinite ease-in-out; transform-origin: bottom center; }
+        #wifi-icon-anim .wifi-symbol path { fill: #333; }
+        #wifi-icon-anim .cursor { animation: click-cursor 2s infinite ease-in-out; transform-origin: top left; }
+        @keyframes pulse-wifi { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+        @keyframes click-cursor { 0%, 40%, 100% { transform: translate(0, 0); } 50%, 60% { transform: translate(2px, 2px); } }
+
     </style>
 </head>
 <body>
     <!-- Splash Screen Mejorado -->
     <div id="splash-screen" class="fixed inset-0 bg-[#F5EEFF] z-50 flex flex-col items-center justify-center text-center p-4">
         <div id="splash-content" class="transition-opacity duration-500 flex flex-col items-center justify-center w-full h-full">
-            
             <div id="detection-state" class="w-full h-full flex items-center justify-center relative">
                 <canvas id="particle-canvas"></canvas>
                 <p id="splash-text" class="text-lg text-gray-700 font-semibold animate-pulse">Detectando tu dispositivo...</p>
             </div>
-
             <div id="shake-state" class="hidden opacity-0 transition-opacity duration-700 flex-col items-center justify-center">
                 <div id="os-logo-container" class="w-28 h-28 mx-auto mb-6"></div>
                 <h2 class="text-2xl font-bold text-gray-800">¡Dispositivo Detectado!</h2>
                 <p class="text-lg text-gray-600 mt-2">Agita tu dispositivo para continuar</p>
-                <p id="ios-permission-text" class="text-xs text-gray-500 mt-4 max-w-xs mx-auto hidden">
-                    En iOS, toca la pantalla una vez para activar los sensores de movimiento.
-                </p>
-                <button id="fallback-btn" class="hidden opacity-0 transition-all duration-500 mt-8 bg-gray-800/80 p-3 rounded-full shadow-lg hover:scale-110 focus:outline-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                </button>
+                <p id="ios-permission-text" class="text-xs text-gray-500 mt-4 max-w-xs mx-auto hidden">En iOS, toca la pantalla una vez para activar los sensores de movimiento.</p>
+                <button id="fallback-btn" class="hidden opacity-0 transition-all duration-500 mt-8 bg-gray-800/80 p-3 rounded-full shadow-lg hover:scale-110 focus:outline-none"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg></button>
             </div>
         </div>
     </div>
@@ -144,26 +146,29 @@
         <div class="layer" data-depth="-0.2"><div id="float3" class="floating-element"></div></div>
         <div class="layer" data-depth="0.3"><div id="float4" class="floating-element"></div></div>
 
-        <!-- Contenedor principal de la App -->
         <div class="layer" data-depth="-0.3">
             <div class="glass-pane">
                 <div class="relative flex flex-col h-full w-full">
-                    <div class="p-4 sm:p-6 flex-shrink-0" data-depth-inside="0.1">
-                        <div class="w-full bg-black/10 rounded-full h-2"><div id="progress-bar" class="bg-gray-900 h-2 rounded-full progress-bar-fill" style="width: 0%"></div></div>
-                    </div>
+                    <div class="p-4 sm:p-6 flex-shrink-0" data-depth-inside="0.1"><div class="w-full bg-black/10 rounded-full h-2"><div id="progress-bar" class="bg-gray-900 h-2 rounded-full progress-bar-fill" style="width: 0%"></div></div></div>
                     <div id="steps-container">
                         <!-- Paso 0: Detección de SO -->
-                        <div id="step-0" class="step current"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center items-center text-center"><h1 class="text-4xl sm:text-5xl font-black mb-4 animated-item" data-depth-inside="0.2">¡Bienvenido!</h1><p class="text-base sm:text-lg text-gray-600 mb-6 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.1">Este es el asistente de configuración de Eduroam.</p><div id="os-info" class="text-lg sm:text-xl font-bold p-4 bg-black/5 rounded-lg mb-8 animated-item" style="animation-delay: 200ms;" data-depth-inside="-0.1"></div><p class="text-sm text-gray-500 mb-4 animated-item" style="animation-delay: 300ms;">Si no es correcto, selecciona tu sistema:</p><div class="flex gap-4 animated-item" style="animation-delay: 400ms;" data-depth-inside="0.3"><button onclick="startGuide('Android')" class="bg-black text-white font-bold py-2 px-6 rounded-full hover:bg-gray-800 transition shadow-md hover:shadow-lg">Android</button><button onclick="startGuide('iOS')" class="bg-black text-white font-bold py-2 px-6 rounded-full hover:bg-gray-800 transition shadow-md hover:shadow-lg">iOS</button></div></div></div>
-                        <!-- Paso 1: Bienvenida -->
-                        <div id="step-1" class="step future"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center"><h2 class="text-sm font-semibold uppercase text-gray-500 animated-item" data-depth-inside="0.1">Asistente Vitrum x UCuenca</h2><h1 class="text-5xl sm:text-7xl font-black my-2 leading-none animated-item" style="animation-delay: 100ms;" data-depth-inside="0.3">Conéctate a</h1><h1 class="text-5xl sm:text-7xl font-black text-purple-600 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.4">Eduroam</h1><p class="text-base sm:text-lg text-gray-600 mt-6 animated-item" style="animation-delay: 300ms;" data-depth-inside="0.2">Esta guía te ayudará en el proceso de configuración para acceder a la red Wi-Fi de la Universidad de Cuenca.</p></div></div>
-                        <!-- Otros pasos -->
-                        <div id="step-2" class="step future"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center"><h1 class="text-4xl sm:text-5xl font-black mb-6 animated-item" data-depth-inside="0.2">¿Qué es Eduroam?</h1><p class="mb-8 text-gray-600 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.1">Eduroam (Education Roaming) es un servicio mundial que ofrece acceso a internet seguro y universal en todas las instituciones afiliadas.</p><ul class="space-y-4 text-left" data-depth-inside="-0.1"><li class="flex items-center animated-item" style="animation-delay: 200ms;"><svg class="w-6 h-6 mr-3 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Acceso global en universidades aliadas.</li><li class="flex items-center animated-item" style="animation-delay: 300ms;"><svg class="w-6 h-6 mr-3 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Conexión de alta velocidad y segura.</li><li class="flex items-center animated-item" style="animation-delay: 400ms;"><svg class="w-6 h-6 mr-3 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Una vez configurado, te conectarás automáticamente.</li></ul></div></div>
-                        <div id="step-3" class="step future"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><div class="flex flex-col items-center gap-4 mb-6" data-depth-inside="-0.2"><svg class="w-16 h-16 text-purple-600 animated-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><h1 class="text-4xl sm:text-5xl font-black animated-item" style="animation-delay: 100ms;" data-depth-inside="0.2">1. Prepárate</h1></div><p class="mb-4 text-gray-600 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.1">Al final de la guía estará el enlace de instalación directa para tu dispositivo.</p><p class="mb-4 text-gray-600 animated-item" style="animation-delay: 300ms;" data-depth-inside="0.1">Se te guiará previamente cómo configurar la app eduroam y por ello es importante que prestes atención a todo el proceso de la guía.</p></div></div>
-                        <div id="step-4" class="step future"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><div class="flex flex-col items-center gap-4 mb-6" data-depth-inside="-0.2"><svg class="w-16 h-16 text-purple-600 animated-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg><h1 class="text-4xl sm:text-5xl font-black animated-item" style="animation-delay: 100ms;" data-depth-inside="0.2">2. Busca tu Institución</h1></div><p class="mb-6 text-gray-600 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.1">Abre la app y en el campo de búsqueda, escribe y selecciona <span class="font-bold">"Universidad de Cuenca"</span>.</p><div class="bg-black/5 w-full h-48 rounded-xl flex items-center justify-center animated-item" style="animation-delay: 300ms;"><p class="text-gray-400">Aquí irá una imagen del paso</p></div></div></div>
-                        <div id="step-5" class="step future"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><div class="flex flex-col items-center gap-4 mb-6" data-depth-inside="-0.2"><svg class="w-16 h-16 text-green-600 animated-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><h1 class="text-4xl sm:text-5xl font-black animated-item" style="animation-delay: 100ms;" data-depth-inside="0.2">3. Ingresa tus Datos</h1></div><p class="mb-6 text-gray-600 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.1">Ingresa tu correo institucional y contraseña.</p><div class="space-y-4 text-left" data-depth-inside="-0.1"><div class="bg-black/5 p-4 rounded-xl animated-item" style="animation-delay: 300ms;"><label class="text-sm text-gray-500">Correo Institucional</label><p class="font-mono text-gray-800 text-sm sm:text-base">tu.usuario@ucuenca.edu.ec</p></div><div class="bg-black/5 p-4 rounded-xl animated-item" style="animation-delay: 400ms;"><label class="text-sm text-gray-500">Contraseña</label><p class="font-mono text-gray-800">••••••••••</p></div></div></div></div>
-                        <div id="step-6" class="step future"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><h1 class="text-4xl sm:text-5xl font-black mb-6 animated-item" data-depth-inside="0.2">4. Guarda la Red</h1><p class="text-lg mb-6 text-gray-600 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.1">¡Atención! Después de ingresar tus datos, aparecerá una ventana emergente. Presiona en <span class="font-bold">"Guardar"</span> o <span class="font-bold">"Conectar"</span>.</p><div class="bg-yellow-400/20 text-yellow-800 border-l-4 border-yellow-500 p-4 rounded-r-lg animated-item text-left" style="animation-delay: 200ms;" data-depth-inside="-0.1"><p class="font-bold">Paso Crucial</p><p>No omitas esta ventana. Es necesaria para que tu dispositivo recuerde la red.</p></div></div></div>
-                        <div id="step-7" class="step future"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><h1 class="text-4xl sm:text-5xl font-black mb-6 animated-item" data-depth-inside="0.2">5. Permiso Final</h1><p class="text-lg mb-6 text-gray-600 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.1">Sal de la aplicación. Es posible que el sistema te pida un último permiso. Debes presionar en <span class="font-bold">"Permitir"</span>.</p><div class="bg-black/5 w-full h-48 rounded-xl flex items-center justify-center animated-item" style="animation-delay: 200ms;"><p class="text-gray-400">Imagen de la ventana de permiso</p></div></div></div>
-                        <div id="step-8" class="step future"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center items-center text-center"><div class="text-8xl mb-6 animated-item" data-depth-inside="-0.3">🚀</div><h1 class="text-4xl sm:text-5xl font-black mb-4 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.2">Inicia el Proceso</h1><p class="text-lg text-gray-600 mb-8 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.1">Inicia el proceso de configuración como lo detallamos en esta guía. Si te pierdes, no te preocupes, siempre puedes regresar y volver a ver esta guía.</p><!-- CORRECCIÓN: Se añade un ID al enlace para poder cambiarlo dinámicamente --><a id="install-link" href="https://play.google.com/store/apps/details?id=app.eduroam.geteduroam" target="_blank" class="block w-full text-center bg-blue-600 text-white font-bold py-4 px-6 rounded-full hover:bg-blue-700 transition text-lg animated-item" style="animation-delay: 300ms;" data-depth-inside="0.4">Instalar geteduroam</a><button onclick="restartGuide()" class="mt-4 text-gray-500 font-bold py-2 px-6 rounded-full hover:bg-black/5 transition animated-item" style="animation-delay: 400ms;" data-depth-inside="0.3">Reiniciar Guía</button></div></div>
+                        <div id="step-0" class="step current"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center items-center text-center"><h1 class="text-4xl sm:text-5xl font-black mb-4 animated-item" data-depth-inside="0.2">¡Bienvenido!</h1><p class="text-base sm:text-lg text-gray-600 mb-6 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.1">Este es el asistente de configuración de Eduroam.</p><div id="os-info" class="text-lg sm:text-xl font-bold p-4 bg-black/5 rounded-lg mb-8 animated-item" style="animation-delay: 200ms;" data-depth-inside="-0.1"></div><p class="text-sm text-gray-500 mb-4 animated-item" style="animation-delay: 300ms;">Si no es correcto, selecciona tu sistema:</p><div class="flex flex-wrap justify-center gap-4 animated-item" style="animation-delay: 400ms;" data-depth-inside="0.3"><button onclick="startGuide('Android')" class="bg-black text-white font-bold py-2 px-6 rounded-full hover:bg-gray-800 transition shadow-md hover:shadow-lg">Android</button><button onclick="startGuide('iOS')" class="bg-black text-white font-bold py-2 px-6 rounded-full hover:bg-gray-800 transition shadow-md hover:shadow-lg">iOS</button><button onclick="startGuide('Windows')" class="bg-black text-white font-bold py-2 px-6 rounded-full hover:bg-gray-800 transition shadow-md hover:shadow-lg">Windows</button></div></div></div>
+                        
+                        <!-- Pasos para Móviles (Android / iOS) -->
+                        <div id="step-1" class="step future mobile-step"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center"><h2 class="text-sm font-semibold uppercase text-gray-500 animated-item" data-depth-inside="0.1">Asistente Vitrum x UCuenca</h2><h1 class="text-5xl sm:text-7xl font-black my-2 leading-none animated-item" style="animation-delay: 100ms;" data-depth-inside="0.3">Conéctate a</h1><h1 class="text-5xl sm:text-7xl font-black text-purple-600 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.4">Eduroam</h1><p class="text-base sm:text-lg text-gray-600 mt-6 animated-item" style="animation-delay: 300ms;" data-depth-inside="0.2">Esta guía te ayudará en el proceso de configuración para acceder a la red Wi-Fi de la Universidad de Cuenca.</p></div></div>
+                        <div id="step-2" class="step future mobile-step"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center"><h1 class="text-4xl sm:text-5xl font-black mb-6 animated-item" data-depth-inside="0.2">¿Qué es Eduroam?</h1><p class="mb-8 text-gray-600 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.1">Eduroam (Education Roaming) es un servicio mundial que ofrece acceso a internet seguro y universal en todas las instituciones afiliadas.</p><ul class="space-y-4 text-left" data-depth-inside="-0.1"><li class="flex items-center animated-item" style="animation-delay: 200ms;"><svg class="w-6 h-6 mr-3 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Acceso global en universidades aliadas.</li><li class="flex items-center animated-item" style="animation-delay: 300ms;"><svg class="w-6 h-6 mr-3 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Conexión de alta velocidad y segura.</li><li class="flex items-center animated-item" style="animation-delay: 400ms;"><svg class="w-6 h-6 mr-3 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Una vez configurado, te conectarás automáticamente.</li></ul></div></div>
+                        <div id="step-3" class="step future mobile-step"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><div class="flex flex-col items-center gap-4 mb-6" data-depth-inside="-0.2"><svg class="w-16 h-16 text-purple-600 animated-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="1.jpg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><h1 class="text-4xl sm:text-5xl font-black animated-item" style="animation-delay: 100ms;" data-depth-inside="0.2">1. Prepárate</h1></div><p class="mb-4 text-gray-600 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.1">Al final de la guía estará el enlace de instalación directa para tu dispositivo.</p><p class="mb-4 text-gray-600 animated-item" style="animation-delay: 300ms;" data-depth-inside="0.1">Se te guiará previamente cómo configurar la app eduroam y por ello es importante que prestes atención a todo el proceso de la guía.</p></div></div>
+                        <div id="step-4" class="step future mobile-step"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><div class="flex flex-col items-center gap-4 mb-6" data-depth-inside="-0.2"><svg class="w-16 h-16 text-purple-600 animated-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg><h1 class="text-4xl sm:text-5xl font-black animated-item" style="animation-delay: 100ms;" data-depth-inside="0.2">2. Busca tu Institución</h1></div><p class="mb-6 text-gray-600 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.1">Abre la app y en el campo de búsqueda, escribe y selecciona <span class="font-bold">"Universidad de Cuenca"</span>.</p><div class="bg-black/5 w-full h-48 rounded-xl flex items-center justify-center animated-item overflow-hidden shadow-inner" style="animation-delay: 300ms;"><img src="1.jpg" alt="Paso 2: Buscar Institución" class="w-full h-full object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x200/e2e8f0/4a5568?text=Paso+2';"></div></div></div>
+                        <div id="step-5" class="step future mobile-step"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><div class="flex flex-col items-center gap-4 mb-6" data-depth-inside="-0.2"><svg class="w-16 h-16 text-green-600 animated-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><h1 class="text-4xl sm:text-5xl font-black animated-item" style="animation-delay: 100ms;" data-depth-inside="0.2">3. Ingresa tus Datos</h1></div><p class="mb-6 text-gray-600 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.1">Ingresa tu correo institucional y contraseña.</p><div class="space-y-4 text-left" data-depth-inside="-0.1"><div class="bg-black/5 p-4 rounded-xl animated-item" style="animation-delay: 300ms;"><label class="text-sm text-gray-500">Correo Institucional</label><p class="font-mono text-gray-800 text-sm sm:text-base">tu.usuario@ucuenca.edu.ec</p></div><div class="bg-black/5 p-4 rounded-xl animated-item" style="animation-delay: 400ms;"><label class="text-sm text-gray-500">Contraseña</label><p class="font-mono text-gray-800">••••••••••</p></div></div></div></div>
+                        <div id="step-6" class="step future mobile-step"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><h1 class="text-4xl sm:text-5xl font-black mb-6 animated-item" data-depth-inside="0.2">4. Guarda la Red</h1><p class="text-lg mb-6 text-gray-600 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.1">¡Atención! Después de ingresar tus datos, aparecerá una ventana emergente. Presiona en <span class="font-bold">"Guardar"</span> o <span class="font-bold">"Conectar"</span>.</p><div class="bg-yellow-400/20 text-yellow-800 border-l-4 border-yellow-500 p-4 rounded-r-lg animated-item text-left" style="animation-delay: 200ms;" data-depth-inside="-0.1"><p class="font-bold">Paso Crucial</p><p>No omitas esta ventana. Es necesaria para que tu dispositivo recuerde la red.</p></div></div></div>
+                        <div id="step-7" class="step future mobile-step"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><h1 class="text-4xl sm:text-5xl font-black mb-6 animated-item" data-depth-inside="0.2">5. Permiso Final</h1><p class="text-lg mb-6 text-gray-600 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.1">Sal de la aplicación. Es posible que el sistema te pida un último permiso. Debes presionar en <span class="font-bold">"Permitir"</span>.</p><div class="bg-black/5 w-full h-48 rounded-xl flex items-center justify-center animated-item overflow-hidden shadow-inner" style="animation-delay: 200ms;"><img src="2.jpg" alt="Paso 5: Permiso Final" class="w-full h-full object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x200/e2e8f0/4a5568?text=Paso+5';"></div></div></div>
+                        <div id="step-8" class="step future mobile-step"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center items-center text-center"><div class="text-8xl mb-6 animated-item" style="animation: final-pop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;" data-depth-inside="-0.3">🚀</div><h1 class="text-4xl sm:text-5xl font-black mb-4 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.2">Inicia el Proceso</h1><p class="text-lg text-gray-600 mb-8 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.1">Inicia el proceso de configuración como lo detallamos en esta guía. Si te pierdes, no te preocupes, siempre puedes regresar y volver a ver esta guía.</p><a id="install-link" href="https://play.google.com/store/apps/details?id=app.eduroam.geteduroam" target="_blank" class="block w-full text-center bg-blue-600 text-white font-bold py-4 px-6 rounded-full hover:bg-blue-700 transition text-lg animated-item" style="animation-delay: 300ms;" data-depth-inside="0.4">Instalar geteduroam</a><button onclick="restartGuide()" class="mt-4 text-gray-500 font-bold py-2 px-6 rounded-full hover:bg-black/5 transition animated-item" style="animation-delay: 400ms;" data-depth-inside="0.3">Reiniciar Guía</button></div></div>
+
+                        <!-- Pasos para Windows -->
+                        <div id="step-win-1" class="step future windows-step hidden"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><h1 class="text-4xl sm:text-5xl font-black mb-6 animated-item" data-depth-inside="0.2">1. Accede a Wi-Fi</h1><p class="mb-6 text-gray-600 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.1">Haz clic en el ícono de <span class="font-bold">Wi-Fi</span> en tu barra de tareas, usualmente en la esquina inferior derecha.</p><div class="w-full h-48 rounded-xl flex items-center justify-center animated-item" style="animation-delay: 200ms;"><svg id="wifi-icon-anim" viewBox="0 0 100 100" class="h-32 w-32"><g class="wifi-symbol"><path d="M50 70 a 20 20 0 0 1 30 0 l 5 5 a 28 28 0 0 0 -40 0 l 5 -5z"></path><path d="M50 55 a 35 35 0 0 1 45 0 l 5 5 a 43 43 0 0 0 -55 0 l 5 -5z"></path><path d="M50 40 a 50 50 0 0 1 60 0 l 5 5 a 58 58 0 0 0 -70 0 l 5 -5z"></path></g><path class="cursor" fill="#1a1a1a" d="M60 75 l 15 20 l -5 5 l -15 -20 z M 55 95 l 20 -15 l 5 5 l -20 15 z"></path></svg></div></div></div>
+                        <div id="step-win-2" class="step future windows-step hidden"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><h1 class="text-4xl sm:text-5xl font-black mb-6 animated-item" data-depth-inside="0.2">2. Selecciona Eduroam</h1><p class="mb-6 text-gray-600 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.1">En la lista de redes disponibles, busca y haz clic en <span class="font-bold">"eduroam"</span>. Asegúrate de que la opción "Conectar automáticamente" esté marcada.</p><div class="bg-black/5 w-full p-4 rounded-xl flex flex-col gap-2 animated-item text-left shadow-inner" style="animation-delay: 200ms;"><div class="p-3 bg-white/50 rounded-lg">Otra Red</div><div class="p-3 bg-blue-500/20 text-blue-800 font-bold ring-2 ring-blue-500 rounded-lg">eduroam</div><div class="p-3 bg-white/50 rounded-lg">Red Vecino</div></div></div></div>
+                        <div id="step-win-3" class="step future windows-step hidden"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center text-center"><h1 class="text-4xl sm:text-5xl font-black animated-item" style="animation-delay: 100ms;" data-depth-inside="0.2">3. Ingresa tus Datos</h1><p class="mb-6 text-gray-600 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.1">El sistema te pedirá tus credenciales. Ingresa tu correo institucional completo y tu contraseña.</p><div class="space-y-4 text-left" data-depth-inside="-0.1"><div class="bg-black/5 p-4 rounded-xl animated-item" style="animation-delay: 300ms;"><label class="text-sm text-gray-500">Nombre de usuario</label><p class="font-mono text-gray-800 text-sm sm:text-base">tu.usuario@ucuenca.edu.ec</p></div><div class="bg-black/5 p-4 rounded-xl animated-item" style="animation-delay: 400ms;"><label class="text-sm text-gray-500">Contraseña</label><p class="font-mono text-gray-800">••••••••••</p></div></div></div></div>
+                        <div id="step-win-4" class="step future windows-step hidden"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center items-center text-center"><div class="text-8xl mb-6 animated-item" style="animation: final-pop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;" data-depth-inside="-0.3">🎉</div><h1 class="text-4xl sm:text-5xl font-black mb-4 animated-item" style="animation-delay: 100ms;" data-depth-inside="0.2">¡Todo Listo!</h1><p class="text-lg text-gray-600 mb-8 animated-item" style="animation-delay: 200ms;" data-depth-inside="0.1">Tu dispositivo Windows ahora está conectado a Eduroam. La próxima vez que estés en el campus, se conectará automáticamente.</p><button onclick="restartGuide()" class="mt-4 text-gray-500 font-bold py-2 px-6 rounded-full hover:bg-black/5 transition animated-item" style="animation-delay: 300ms;" data-depth-inside="0.3">Reiniciar Guía</button></div></div>
                     </div>
                     <!-- Navegación -->
                     <div id="navigation" class="p-4 sm:p-6 mt-auto flex-shrink-0 flex justify-between items-center opacity-0" style="transition: opacity 0.5s;" data-depth-inside="0.5"><button id="back-btn" onclick="navigate(-1)" class="font-bold text-gray-500 py-3 px-4 hover:text-black transition">Atrás</button><button id="next-btn" onclick="navigate(1)" class="bg-black text-white font-bold py-4 px-10 rounded-full hover:bg-gray-800 transition shadow-md hover:shadow-lg">Siguiente</button></div>
@@ -174,8 +179,8 @@
 
     <script>
         let currentStep = 0;
-        const steps = document.querySelectorAll('.step');
-        const totalSteps = steps.length - 1; 
+        let steps = document.querySelectorAll('.step');
+        let totalSteps = steps.length - 1; 
         const progressBar = document.getElementById('progress-bar');
         const navigation = document.getElementById('navigation');
         const nextBtn = document.getElementById('next-btn');
@@ -193,10 +198,16 @@
                 else if (index < currentStep) step.classList.add('past');
                 else step.classList.add('future');
             });
+            
+            // La barra de progreso se calcula sobre el total de pasos VISIBLES.
             const progress = currentStep > 0 ? ((currentStep - 1) / (totalSteps - 2)) * 100 : 0;
             progressBar.style.width = `${Math.min(progress, 100)}%`;
-            navigation.style.opacity = (currentStep > 0 && currentStep < totalSteps) ? '1' : '0';
-            navigation.style.pointerEvents = (currentStep > 0 && currentStep < totalSteps) ? 'auto' : 'none';
+            
+            // Ocultar navegación en el primer y último paso.
+            const isNavVisible = currentStep > 0 && currentStep < totalSteps;
+            navigation.style.opacity = isNavVisible ? '1' : '0';
+            navigation.style.pointerEvents = isNavVisible ? 'auto' : 'none';
+
             document.getElementById('back-btn').style.visibility = (currentStep <= 1) ? 'hidden' : 'visible';
             nextBtn.textContent = (currentStep === totalSteps - 1) ? 'Finalizar' : 'Siguiente';
         }
@@ -210,24 +221,42 @@
             }
         }
         
-        // CORRECCIÓN: Lógica de inicio de guía unificada para Android y iOS
         function startGuide(os) {
             vibrateDevice();
-            const installLink = document.getElementById('install-link');
-            if (os === 'iOS') {
-                installLink.href = 'https://apps.apple.com/es/app/geteduroam/id1504076137';
-            } else { // Predeterminado a Android
-                installLink.href = 'https://play.google.com/store/apps/details?id=app.eduroam.geteduroam';
+
+            document.querySelectorAll('.mobile-step').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.windows-step').forEach(el => el.classList.add('hidden'));
+
+            if (os === 'Windows') {
+                document.querySelectorAll('.windows-step').forEach(el => el.classList.remove('hidden'));
+            } else { // Android or iOS
+                document.querySelectorAll('.mobile-step').forEach(el => el.classList.remove('hidden'));
+                const installLink = document.getElementById('install-link');
+                if (os === 'iOS') {
+                    installLink.href = 'https://apps.apple.com/es/app/geteduroam/id1504076137';
+                } else {
+                    installLink.href = 'https://play.google.com/store/apps/details?id=app.eduroam.geteduroam';
+                }
             }
+            
+            // Recalcular los pasos visibles para la navegación
+            steps = document.querySelectorAll('.step:not(.hidden)');
+            totalSteps = steps.length - 1;
+            
             if (currentStep === 0) {
                 currentStep = 1;
             }
             updateUI();
         }
 
-
         function restartGuide() {
+            vibrateDevice();
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('hidden'));
+            document.querySelectorAll('.windows-step, .mobile-step').forEach(el => el.classList.add('hidden'));
+
             currentStep = 0;
+            steps = document.querySelectorAll('.step:not(.hidden)');
+            totalSteps = steps.length - 1;
             updateUI();
         }
 
@@ -244,7 +273,7 @@
             switch (os) {
                 case "Android": return `<img src="https://upload.wikimedia.org/wikipedia/commons/6/66/Android_robot.png" alt="Android Logo" class="w-full h-full object-contain rounded-3xl">`;
                 case "iOS": return `<img src="https://cdn3.iconfinder.com/data/icons/social-media-logos-glyph/2048/5315_-_Apple-512.png" alt="iOS Logo" class="w-full h-full object-contain rounded-3xl">`;
-                case "Windows": return `<img src="https://icones.pro/wp-content/uploads/2021/06/icone-windows-bleu.png" alt="Windows Logo" class="w-full h-full object-contain rounded-3xl">`;
+                case "Windows": return `<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Windows_logo_and_wordmark_-_2021.svg/512px-Windows_logo_and_wordmark_-_2021.svg.png" alt="Windows Logo" class="w-full h-full object-contain">`;
                 default: return `<img src="https://static.vecteezy.com/system/resources/thumbnails/012/794/638/small/3d-unknown-devices-rendered-object-illustration-png.png" alt="Generic OS Logo" class="w-full h-full object-contain rounded-3xl">`;
             }
         }
@@ -280,45 +309,16 @@
             const ctx = canvas.getContext('2d');
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-
             let particles = [];
             const numParticles = 150;
             let animationFrameId;
             let phase = 'exploding';
-
-            class Particle {
-                constructor() {
-                    this.x = canvas.width / 2;
-                    this.y = canvas.height / 2;
-                    const angle = Math.random() * Math.PI * 2;
-                    const speed = Math.random() * 4 + 1;
-                    this.vx = Math.cos(angle) * speed;
-                    this.vy = Math.sin(angle) * speed;
-                    this.radius = Math.random() * 2 + 1;
-                    this.color = `rgba(51, 51, 51, ${Math.random() * 0.5 + 0.2})`;
-                }
-                update() { this.x += this.vx; this.y += this.vy; }
-                draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill(); }
-            }
-
+            class Particle { constructor() { this.x = canvas.width / 2; this.y = canvas.height / 2; const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 4 + 1; this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed; this.radius = Math.random() * 2 + 1; this.color = `rgba(51, 51, 51, ${Math.random() * 0.5 + 0.2})`; } update() { this.x += this.vx; this.y += this.vy; } draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill(); } }
             function createParticles() { for (let i = 0; i < numParticles; i++) { particles.push(new Particle()); } }
-
             function animateParticles() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 let allParticlesImploded = true;
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    const p = particles[i];
-                    if (phase === 'exploding') { p.update(); } 
-                    else if (phase === 'imploding') {
-                        const dx = canvas.width / 2 - p.x;
-                        const dy = canvas.height / 2 - p.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        const speed = 5;
-                        if (dist > speed) { p.x += (dx / dist) * speed; p.y += (dy / dist) * speed; allParticlesImploded = false; } 
-                        else { p.x = canvas.width/2; p.y = canvas.height/2; }
-                    }
-                    p.draw();
-                }
+                for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; if (phase === 'exploding') { p.update(); } else if (phase === 'imploding') { const dx = canvas.width / 2 - p.x; const dy = canvas.height / 2 - p.y; const dist = Math.sqrt(dx * dx + dy * dy); const speed = 5; if (dist > speed) { p.x += (dx / dist) * speed; p.y += (dy / dist) * speed; allParticlesImploded = false; } else { p.x = canvas.width/2; p.y = canvas.height/2; } } p.draw(); }
                 if (phase === 'imploding' && allParticlesImploded) { cancelAnimationFrame(animationFrameId); transitionToShakeState(); return; }
                 animationFrameId = requestAnimationFrame(animateParticles);
             }
@@ -333,123 +333,53 @@
             document.getElementById('splash-screen').style.opacity = '0';
             document.getElementById('splash-screen').style.pointerEvents = 'none';
             document.querySelector('.glass-pane').classList.add('visible');
-            
             const os = getDetectedOS();
             document.getElementById('os-info').textContent = `Detectado: ${os}`;
-            
-            // CORRECCIÓN: Pre-configurar el enlace de descarga al iniciar la app
-            const installLink = document.getElementById('install-link');
-            if (os === 'iOS') {
-                installLink.href = 'https://apps.apple.com/es/app/geteduroam/id1504076137';
-            }
+
+            // Ocultar los pasos específicos de SO al inicio
+            document.querySelectorAll('.mobile-step, .windows-step').forEach(el => el.classList.add('hidden'));
+            steps = document.querySelectorAll('.step:not(.hidden)');
+            totalSteps = steps.length - 1;
             
             updateUI();
 
-            // CORRECCIÓN: Autoiniciar guía para Android e iOS
             if ((os === "Android" || os === "iOS") && currentStep === 0) {
-                setTimeout(() => {
-                    if (currentStep === 0) startGuide(os);
-                }, 1500);
+                setTimeout(() => { if (currentStep === 0) startGuide(os); }, 1500);
             }
         }
         
         function initShakeDetection() {
             const SHAKE_THRESHOLD = 20;
             let motionListener = null;
-
-            const handleMotionEvent = (event) => {
-                const { x, y, z } = event.accelerationIncludingGravity;
-                const acceleration = Math.sqrt(x*x + y*y + z*z);
-                if (acceleration > SHAKE_THRESHOLD) {
-                    vibrateDevice(100);
-                    window.removeEventListener('devicemotion', motionListener);
-                    startApp();
-                }
-            };
+            const handleMotionEvent = (event) => { const { x, y, z } = event.accelerationIncludingGravity; const acceleration = Math.sqrt(x*x + y*y + z*z); if (acceleration > SHAKE_THRESHOLD) { vibrateDevice(100); window.removeEventListener('devicemotion', motionListener); startApp(); } };
             motionListener = handleMotionEvent;
-
-            fallbackTimeout = setTimeout(() => {
-                const fallbackBtn = document.getElementById('fallback-btn');
-                fallbackBtn.classList.remove('hidden');
-                setTimeout(() => fallbackBtn.style.opacity = '1', 50);
-            }, 3000);
-
+            fallbackTimeout = setTimeout(() => { const fallbackBtn = document.getElementById('fallback-btn'); fallbackBtn.classList.remove('hidden'); setTimeout(() => fallbackBtn.style.opacity = '1', 50); }, 3000);
             document.getElementById('fallback-btn').addEventListener('click', () => { startApp(); });
-
             if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
                 const iosPermissionText = document.getElementById('ios-permission-text');
                 iosPermissionText.classList.remove('hidden');
-                
-                const requestMotionPermission = () => {
-                    Promise.all([ DeviceMotionEvent.requestPermission(), DeviceOrientationEvent.requestPermission() ])
-                    .then(results => {
-                        let motionGranted = results[0] === 'granted';
-                        if (motionGranted) { window.addEventListener('devicemotion', motionListener); }
-                        if (motionGranted || results[1] === 'granted') { iosPermissionText.textContent = "¡Sensores activados! Ahora agita el dispositivo."; } 
-                        else { iosPermissionText.textContent = "Permiso de sensores denegado. Algunas funciones no estarán disponibles."; }
-                    }).catch(console.error);
-                    document.getElementById('splash-screen').removeEventListener('click', requestMotionPermission);
-                };
+                const requestMotionPermission = () => { Promise.all([ DeviceMotionEvent.requestPermission(), DeviceOrientationEvent.requestPermission() ]).then(results => { let motionGranted = results[0] === 'granted'; if (motionGranted) { window.addEventListener('devicemotion', motionListener); } if (motionGranted || results[1] === 'granted') { iosPermissionText.textContent = "¡Sensores activados! Ahora agita el dispositivo."; } else { iosPermissionText.textContent = "Permiso de sensores denegado. Algunas funciones no estarán disponibles."; } }).catch(console.error); document.getElementById('splash-screen').removeEventListener('click', requestMotionPermission); };
                 document.getElementById('splash-screen').addEventListener('click', requestMotionPermission);
-            } else {
-                window.addEventListener('devicemotion', motionListener);
-            }
+            } else { window.addEventListener('devicemotion', motionListener); }
         }
 
-        // --- Lógica de Parallax Corregida y Mejorada ---
         function initParallax() {
             const scene = document.getElementById('parallax-scene');
             const layers = scene.querySelectorAll('.layer');
             const glassPane = document.querySelector('.glass-pane');
-            // CORRECCIÓN: Seleccionar los elementos internos que también tendrán efecto parallax
             const parallaxItems = document.querySelectorAll('[data-depth-inside]');
-            // CORRECCIÓN: Aumentar la sensibilidad para un efecto más intenso
             const sensitivity = 50;
-
             glassPane.classList.add('parallax-active');
-
             const handleMove = (x_ratio, y_ratio) => {
-                // Mueve las capas de fondo
-                layers.forEach(layer => {
-                    const depth = layer.getAttribute('data-depth');
-                    const x_axis = -x_ratio * sensitivity * depth;
-                    const y_axis = -y_ratio * sensitivity * depth;
-                    layer.style.transform = `translate3d(${x_axis}px, ${y_axis}px, 0)`;
-                });
-
-                // CORRECCIÓN: Mueve los elementos internos de la tarjeta
-                parallaxItems.forEach(item => {
-                    const depth = item.getAttribute('data-depth-inside');
-                    const x_axis = -x_ratio * sensitivity * depth;
-                    const y_axis = -y_ratio * sensitivity * depth;
-                    item.style.transform = `translate3d(${x_axis}px, ${y_axis}px, 0)`;
-                });
-
-                // Añade rotación al panel principal para un efecto 3D más pronunciado
-                const rotateY = x_ratio * -12; 
-                const rotateX = y_ratio * 12;
-                glassPane.style.transform = `scale(1) rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+                layers.forEach(layer => { const depth = layer.getAttribute('data-depth'); const x_axis = -x_ratio * sensitivity * depth; const y_axis = -y_ratio * sensitivity * depth; layer.style.transform = `translate3d(${x_axis}px, ${y_axis}px, 0)`; });
+                parallaxItems.forEach(item => { const depth = item.getAttribute('data-depth-inside'); const x_axis = -x_ratio * sensitivity * depth; const y_axis = -y_ratio * sensitivity * depth; item.style.transform = `translate3d(${x_axis}px, ${y_axis}px, 0)`; });
+                const rotateY = x_ratio * -12; const rotateX = y_ratio * 12; glassPane.style.transform = `scale(1) rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
             };
-
-            if (window.DeviceOrientationEvent && 'ontouchstart' in window) {
-                window.addEventListener('deviceorientation', (event) => {
-                    const beta = event.beta; // Inclinación adelante-atrás (-180 a 180)
-                    const gamma = event.gamma; // Inclinación izquierda-derecha (-90 a 90)
-                    // Normalizar los valores para un rango consistente de -1 a 1
-                    const y_ratio = Math.max(-1, Math.min(1, beta / 90));
-                    const x_ratio = Math.max(-1, Math.min(1, gamma / 90));
-                    handleMove(x_ratio, y_ratio);
-                });
-            } else {
-                 window.addEventListener('mousemove', (event) => {
-                    const x_ratio = (event.clientX / window.innerWidth) - 0.5;
-                    const y_ratio = (event.clientY / window.innerHeight) - 0.5;
-                    handleMove(x_ratio, y_ratio);
-                });
-            }
+            if (window.DeviceOrientationEvent && 'ontouchstart' in window) { window.addEventListener('deviceorientation', (event) => { const beta = event.beta; const gamma = event.gamma; const y_ratio = Math.max(-1, Math.min(1, beta / 90)); const x_ratio = Math.max(-1, Math.min(1, gamma / 90)); handleMove(x_ratio, y_ratio); }); } else { window.addEventListener('mousemove', (event) => { const x_ratio = (event.clientX / window.innerWidth) - 0.5; const y_ratio = (event.clientY / window.innerHeight) - 0.5; handleMove(x_ratio, y_ratio); }); }
         }
 
         document.addEventListener('DOMContentLoaded', initParticleScanner);
     </script>
 </body>
 </html>
+

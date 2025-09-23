@@ -63,11 +63,17 @@
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 24px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            /* --- MEJORA: Sombra más pronunciada para dar profundidad --- */
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15), 0 2px 10px rgba(0, 0, 0, 0.1);
             height: 90vh; max-height: 700px; width: 90vw; max-width: 480px;
             display: flex; flex-direction: column;
             opacity: 0; transform: scale(0.95);
+            /* --- MEJORA: Transición para la animación de entrada --- */
             transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        /* --- MEJORA: Transición rápida para el efecto parallax --- */
+        .glass-pane.parallax-active {
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.1s linear;
         }
         .glass-pane.visible { opacity: 1; transform: scale(1); }
 
@@ -151,7 +157,7 @@
         <div class="layer" data-depth="0.3"><div id="float4" class="floating-element"></div></div>
 
         <!-- Main App Container -->
-        <div class="layer" data-depth="-0.1">
+        <div class="layer" data-depth="-0.3">
             <div class="glass-pane">
                 <div class="relative flex flex-col h-full w-full">
                     <div class="p-4 sm:p-6 flex-shrink-0">
@@ -159,7 +165,7 @@
                     </div>
                     <div id="steps-container">
                         <!-- Step 0: OS Detection -->
-                        <div id="step-0" class="step current"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center items-center text-center"><h1 class="text-4xl sm:text-5xl font-black mb-4 animated-item">¡Bienvenido!</h1><p class="text-base sm:text-lg text-gray-600 mb-6 animated-item" style="animation-delay: 100ms;">Este es el asistente de configuración de Eduroam.</p><div id="os-info" class="text-lg sm:text-xl font-bold p-4 bg-black/5 rounded-lg mb-8 animated-item" style="animation-delay: 200ms;"></div><p class="text-sm text-gray-500 mb-4 animated-item" style="animation-delay: 300ms;">Si no es correcto, selecciona tu sistema:</p><div class="flex gap-4 animated-item" style="animation-delay: 400ms;"><button onclick="startGuide('Android')" class="bg-black text-white font-bold py-2 px-6 rounded-full hover:bg-gray-800 transition">Android</button><button class="bg-black/5 text-gray-400 font-bold py-2 px-6 rounded-full cursor-not-allowed" disabled>iOS</button></div></div></div>
+                        <div id="step-0" class="step current"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center items-center text-center"><h1 class="text-4xl sm:text-5xl font-black mb-4 animated-item">¡Bienvenido!</h1><p class="text-base sm:text-lg text-gray-600 mb-6 animated-item" style="animation-delay: 100ms;">Este es el asistente de configuración de Eduroam.</p><div id="os-info" class="text-lg sm:text-xl font-bold p-4 bg-black/5 rounded-lg mb-8 animated-item" style="animation-delay: 200ms;"></div><p class="text-sm text-gray-500 mb-4 animated-item" style="animation-delay: 300ms;">Si no es correcto, selecciona tu sistema:</p><div class="flex gap-4 animated-item" style="animation-delay: 400ms;"><button onclick="startGuide('Android')" class="bg-black text-white font-bold py-2 px-6 rounded-full hover:bg-gray-800 transition shadow-md hover:shadow-lg">Android</button><button class="bg-black/5 text-gray-400 font-bold py-2 px-6 rounded-full cursor-not-allowed" disabled>iOS</button></div></div></div>
                         <!-- Step 1: Welcome -->
                         <div id="step-1" class="step future"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center"><h2 class="text-sm font-semibold uppercase text-gray-500 animated-item">Asistente Vitrum x UCuenca</h2><h1 class="text-5xl sm:text-7xl font-black my-2 leading-none animated-item" style="animation-delay: 100ms;">Conéctate a</h1><h1 class="text-5xl sm:text-7xl font-black text-purple-600 animated-item" style="animation-delay: 200ms;">Eduroam</h1><p class="text-base sm:text-lg text-gray-600 mt-6 animated-item" style="animation-delay: 300ms;">Esta guía te ayudará en el proceso de configuración para acceder a la red Wi-Fi de la Universidad de Cuenca.</p></div></div>
                         <!-- Other steps remain the same -->
@@ -172,7 +178,7 @@
                         <div id="step-8" class="step future"><div class="w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col flex-grow justify-center items-center text-center"><div class="text-8xl mb-6 animated-item">🚀</div><h1 class="text-4xl sm:text-5xl font-black mb-4 animated-item" style="animation-delay: 100ms;">Inicia el Proceso</h1><p class="text-lg text-gray-600 mb-8 animated-item" style="animation-delay: 200ms;">Inicia el proceso de configuración como lo detallamos en esta guía. Si te pierdes, no te preocupes, siempre puedes regresar y volver a ver esta guía.</p><a href="https://play.google.com/store/apps/details?id=app.eduroam.geteduroam" target="_blank" class="block w-full text-center bg-blue-600 text-white font-bold py-4 px-6 rounded-full hover:bg-blue-700 transition text-lg animated-item" style="animation-delay: 300ms;">Instalar geteduroam</a><button onclick="restartGuide()" class="mt-4 text-gray-500 font-bold py-2 px-6 rounded-full hover:bg-black/5 transition animated-item" style="animation-delay: 400ms;">Reiniciar Guía</button></div></div>
                     </div>
                     <!-- Navigation -->
-                    <div id="navigation" class="p-4 sm:p-6 mt-auto flex-shrink-0 flex justify-between items-center opacity-0" style="transition: opacity 0.5s;"><button id="back-btn" onclick="navigate(-1)" class="font-bold text-gray-500 py-3 px-4 hover:text-black transition">Atrás</button><button id="next-btn" onclick="navigate(1)" class="bg-black text-white font-bold py-4 px-10 rounded-full hover:bg-gray-800 transition">Siguiente</button></div>
+                    <div id="navigation" class="p-4 sm:p-6 mt-auto flex-shrink-0 flex justify-between items-center opacity-0" style="transition: opacity 0.5s;"><button id="back-btn" onclick="navigate(-1)" class="font-bold text-gray-500 py-3 px-4 hover:text-black transition">Atrás</button><button id="next-btn" onclick="navigate(1)" class="bg-black text-white font-bold py-4 px-10 rounded-full hover:bg-gray-800 transition shadow-md hover:shadow-lg">Siguiente</button></div>
                 </div>
             </div>
         </div>
@@ -185,6 +191,13 @@
         const progressBar = document.getElementById('progress-bar');
         const navigation = document.getElementById('navigation');
         const nextBtn = document.getElementById('next-btn');
+
+        // --- MEJORA: Función de vibración centralizada ---
+        function vibrateDevice(duration = 50) {
+            if (navigator.vibrate) {
+                navigator.vibrate(duration);
+            }
+        }
 
         function updateUI() {
             steps.forEach((step, index) => {
@@ -202,6 +215,7 @@
         }
 
         function navigate(direction) {
+            vibrateDevice(); // Vibrar en cada navegación
             const newStep = currentStep + direction;
             if (newStep >= 0 && newStep <= totalSteps) {
                 currentStep = newStep;
@@ -210,6 +224,7 @@
         }
         
         function startGuide(os) {
+            vibrateDevice(); // Vibrar al seleccionar OS
             if (os === 'Android') {
                 currentStep = 1;
                 updateUI();
@@ -379,7 +394,7 @@
                 const acceleration = Math.sqrt(x*x + y*y + z*z);
                 
                 if (acceleration > SHAKE_THRESHOLD) {
-                    if (navigator.vibrate) navigator.vibrate(100);
+                    vibrateDevice(100); // Vibración más fuerte al agitar
                     window.removeEventListener('devicemotion', motionListener);
                     startApp();
                 }
@@ -404,12 +419,21 @@
                 iosPermissionText.classList.remove('hidden');
                 
                 const requestMotionPermission = () => {
-                    DeviceMotionEvent.requestPermission().then(permissionState => {
-                        if (permissionState === 'granted') {
+                    // --- MEJORA: Solicitar ambos permisos (movimiento y orientación) ---
+                    Promise.all([
+                        DeviceMotionEvent.requestPermission(),
+                        DeviceOrientationEvent.requestPermission()
+                    ]).then(results => {
+                        let motionGranted = results[0] === 'granted';
+                        let orientationGranted = results[1] === 'granted';
+
+                        if (motionGranted) {
                             window.addEventListener('devicemotion', motionListener);
-                            iosPermissionText.textContent = "¡Sensor activado! Ahora agita el dispositivo.";
+                        }
+                        if (motionGranted || orientationGranted) {
+                            iosPermissionText.textContent = "¡Sensores activados! Ahora agita el dispositivo.";
                         } else {
-                            iosPermissionText.textContent = "Permiso denegado. No se puede usar la función de agitar.";
+                            iosPermissionText.textContent = "Permiso de sensores denegado. Algunas funciones no estarán disponibles.";
                         }
                     }).catch(console.error);
                     document.getElementById('splash-screen').removeEventListener('click', requestMotionPermission);
@@ -424,7 +448,11 @@
         function initParallax() {
             const scene = document.getElementById('parallax-scene');
             const layers = scene.querySelectorAll('.layer');
+            const glassPane = document.querySelector('.glass-pane');
             const sensitivity = 30;
+
+            // Preparamos el panel de vidrio para la transición de parallax
+            glassPane.classList.add('parallax-active');
 
             const handleMove = (x_ratio, y_ratio) => {
                 layers.forEach(layer => {
@@ -433,7 +461,12 @@
                     const y_axis = -y_ratio * sensitivity * depth;
                     layer.style.transform = `translate3d(${x_axis}px, ${y_axis}px, 0)`;
                 });
-            }
+
+                // --- MEJORA: Añadir rotación al panel para efecto 3D ---
+                const rotateY = x_ratio * -8; // Grados de rotación
+                const rotateX = y_ratio * 8;
+                glassPane.style.transform = `scale(1) rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+            };
 
             if (window.DeviceOrientationEvent && 'ontouchstart' in window) {
                 window.addEventListener('deviceorientation', (event) => {

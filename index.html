@@ -3,197 +3,353 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web OS</title>
-    <!-- Tailwind CSS para un diseño rápido y moderno -->
+    <title>Asistente de Configuración Eduroam - UCuenca</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google API Libraries with onload callbacks -->
-    <script src="https://apis.google.com/js/api.js?onload=gapiLoaded" async defer></script>
-    <script src="https://accounts.google.com/gsi/client?onload=gisLoaded" async defer></script>
-    <!-- Estilos personalizados y configuración de fuentes -->
-    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(180deg, #E6D9FF 0%, #F5EEFF 40%, #FFFFFF 100%);
+            color: #1a1a1a;
+            min-height: 100vh;
+            overflow: hidden; /* Prevent body scroll */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #parallax-scene {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            perspective: 1000px;
+        }
+
+        .layer {
+             position: absolute;
+             top:0; left:0; right:0; bottom:0;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             transition: transform 0.1s ease-out;
+        }
+
+        /* 4-point star SVG */
+        .sparkle {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            color: #1a1a1a;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 2.5s forwards;
+        }
+        .sparkle-1 { top: 15%; left: 5%; transform: rotate(15deg) scale(0.8); }
+        .sparkle-2 { top: 25%; right: 10%; transform: rotate(-10deg); animation-delay: 2.7s; }
+        .sparkle-3 { bottom: 20%; left: 20%; transform: rotate(25deg) scale(1.2); animation-delay: 2.9s;}
+
+        /* --- 3D Floating Elements --- */
+        .floating-element {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5), rgba(255,255,255,0) 70%), rgba(128, 90, 213, 0.2);
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.3), 0 10px 25px rgba(0,0,0,0.1);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        #float1 { width: 200px; height: 200px; top: 10%; left: -5%; animation-duration: 25s;}
+        #float2 { width: 150px; height: 150px; top: 70%; right: -3%; animation-duration: 30s; animation-delay: 5s;}
+        #float3 { width: 80px; height: 80px; top: 80%; left: 10%; animation-duration: 18s; animation-delay: 2s;}
+        #float4 { width: 120px; height: 120px; top: 5%; right: 25%; animation-duration: 22s; animation-delay: 8s;}
+
+        /* --- Glass Pane Effect --- */
+        .glass-pane {
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            height: 90vh;
+            max-height: 700px;
+            width: 90vw;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+        }
+        .glass-pane.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* --- Splash Screen --- */
+        #splash-screen {
+            transition: opacity 0.7s ease-out;
+        }
+
+        /* Animation Keyframes */
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.5); } 80% { opacity: 1; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes float { 0% { transform: translateY(0) translateX(0) scale(1) rotate(0deg); } 25% { transform: translateY(-30px) translateX(20px) scale(1.1) rotate(20deg); } 50% { transform: translateY(20px) translateX(-30px) scale(0.9) rotate(-10deg); } 75% { transform: translateY(-10px) translateX(40px) scale(1) rotate(15deg); } 100% { transform: translateY(0) translateX(0) scale(1) rotate(0deg); } }
+
+        .animated-item { opacity: 0; }
+        .current .animated-item { animation: slideInUp 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        .current .animated-icon { animation: popIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+
+        #steps-container { flex: 1; position: relative; overflow: hidden; }
+        .step { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: flex; flex-direction: column; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .step.future { transform: translateX(100%); }
+        .step.past { transform: translateX(-100%); }
+        .step.current { transform: translateX(0); }
+        .progress-bar-fill { transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
 </head>
 <body>
-
-    <div id="animated-bg" class="zoomed-in"></div>
-
-    <!-- Onboarding Screen -->
-    <div id="onboarding-screen" class="screen fixed inset-0 z-40 flex items-center justify-center p-4">
-        <div class="w-full max-w-sm md:max-w-3xl h-[600px] md:h-[450px] bg-pink-200 rounded-3xl shadow-2xl flex overflow-hidden border border-pink-300 backdrop-blur-md bg-opacity-80">
-            <!-- Onboarding Step 1: Accent Color -->
-            <div id="onboarding-step-1" class="onboarding-step w-full h-full flex flex-col md:flex-row">
-                <div class="w-full h-1/3 md:w-1/3 md:h-full">
-                    <img src="https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=1887&auto=format&fit=crop" class="w-full h-full object-cover rounded-t-3xl md:rounded-l-3xl md:rounded-tr-none" alt="Abstract pink shapes">
-                </div>
-                <div class="w-full h-2/3 md:w-2/3 md:h-full p-6 md:p-8 flex flex-col">
-                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">¡Bienvenido a tu nuevo espacio!</h2>
-                    <p class="text-gray-600 mb-6">Personaliza tu experiencia eligiendo un color de acento que te represente.</p>
-                    <div class="flex-grow flex items-center justify-center gap-4">
-                        <button class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-pink-400 transform hover:scale-110 transition-transform focus:outline-none focus:ring-4 ring-pink-300"></button>
-                        <button class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-rose-400 transform hover:scale-110 transition-transform focus:outline-none focus:ring-4 ring-rose-300"></button>
-                        <button class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-fuchsia-400 transform hover:scale-110 transition-transform focus:outline-none focus:ring-4 ring-fuchsia-300"></button>
-                        <button class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-purple-400 transform hover:scale-110 transition-transform focus:outline-none focus:ring-4 ring-purple-300"></button>
-                        <button class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-indigo-400 transform hover:scale-110 transition-transform focus:outline-none focus:ring-4 ring-indigo-300"></button>
-                    </div>
-                    <button data-next-step="2" class="onboarding-next-btn self-end w-14 h-14 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors shadow-lg flex items-center justify-center transform hover:scale-110">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                    </button>
-                </div>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="fixed inset-0 bg-[#F5EEFF] z-50 flex flex-col items-center justify-center">
+        <div id="splash-content" class="text-center transition-opacity duration-500">
+            <p id="splash-text" class="text-lg text-gray-600 mb-4">Detectando tu dispositivo...</p>
+            <div id="os-logo-container" class="w-24 h-24 mx-auto opacity-0 scale-50 transition-all duration-500">
+                <!-- OS Logo will be injected here -->
             </div>
-            <!-- Onboarding Step 2: Terms of Use -->
-            <div id="onboarding-step-2" class="onboarding-step w-full h-full flex flex-col md:flex-row absolute inset-0 opacity-0 pointer-events-none">
-                <div class="w-full h-1/3 md:w-1/3 md:h-full">
-                    <img src="https://images.unsplash.com/photo-1614099232631-4516752b6f13?q=80&w=1887&auto=format&fit=crop" class="w-full h-full object-cover rounded-t-3xl md:rounded-l-3xl md:rounded-tr-none" alt="Abstract flowing lines">
-                </div>
-                <div class="w-full h-2/3 md:w-2/3 md:h-full p-6 md:p-8 flex flex-col">
-                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Acuerdos de Uso</h2>
-                    <p class="text-gray-600 mb-4 flex-grow overflow-auto pr-2 text-sm">
-                        Antes de continuar, por favor lee y acepta nuestros términos y condiciones. Este documento describe tus derechos y responsabilidades como usuario de nuestro sistema operativo web. Al hacer clic en "Aceptar y Continuar", confirmas que has leído, entendido y aceptado estar sujeto a estos términos. El uso continuado del servicio constituirá la aceptación de cualquier actualización futura de estos términos. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.
-                    </p>
-                    <button id="finish-onboarding-btn" class="self-end w-14 h-14 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors shadow-lg flex items-center justify-center transform hover:scale-110">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                    </button>
+        </div>
+    </div>
+    
+    <div id="parallax-scene">
+        <!-- Background Decorations -->
+        <div class="layer" data-depth="0.3">
+            <svg class="sparkle sparkle-1" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M27 0L32.226 21.774L54 27L32.226 32.226L27 54L21.774 32.226L0 27L21.774 21.774L27 0Z" fill="currentColor"/></svg>
+        </div>
+        <div class="layer" data-depth="0.2">
+            <svg class="sparkle sparkle-2" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M27 0L32.226 21.774L54 27L32.226 32.226L27 54L21.774 32.226L0 27L21.774 21.774L27 0Z" fill="currentColor"/></svg>
+        </div>
+         <div class="layer" data-depth="0.4">
+            <svg class="sparkle sparkle-3" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M27 0L32.226 21.774L54 27L32.226 32.226L27 54L21.774 32.226L0 27L21.774 21.774L27 0Z" fill="currentColor"/></svg>
+        </div>
+        <div class="layer" data-depth="0.2"><div id="float1" class="floating-element"></div></div>
+        <div class="layer" data-depth="0.4"><div id="float2" class="floating-element"></div></div>
+        <div class="layer" data-depth="-0.2"><div id="float3" class="floating-element"></div></div>
+        <div class="layer" data-depth="0.3"><div id="float4" class="floating-element"></div></div>
+
+        <!-- Main App Container -->
+        <div class="layer" data-depth="-0.1">
+            <div class="glass-pane">
+                <div class="relative flex flex-col h-full w-full">
+
+                    <!-- Progress Bar -->
+                    <div class="p-4 sm:p-6 flex-shrink-0">
+                        <div class="w-full bg-black/10 rounded-full h-2">
+                            <div id="progress-bar" class="bg-gray-900 h-2 rounded-full progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div id="steps-container">
+                        
+                        <!-- Step 0: OS Detection -->
+                        <div id="step-0" class="step current">
+                            <div class="w-full max-w-lg mx-auto p-6 flex flex-col flex-grow justify-center items-center text-center">
+                                <h1 class="text-5xl font-black mb-4 animated-item">¡Bienvenido!</h1>
+                                <p class="text-lg text-gray-600 mb-6 animated-item" style="animation-delay: 100ms;">Este es el asistente de configuración de Eduroam.</p>
+                                <div id="os-info" class="text-xl font-bold p-4 bg-black/5 rounded-lg mb-8 animated-item" style="animation-delay: 200ms;"></div>
+                                <p class="text-sm text-gray-500 mb-4 animated-item" style="animation-delay: 300ms;">Si no es correcto, selecciona tu sistema:</p>
+                                <div class="flex gap-4 animated-item" style="animation-delay: 400ms;">
+                                    <button onclick="startGuide('Android')" class="bg-black text-white font-bold py-2 px-6 rounded-full hover:bg-gray-800 transition">Android</button>
+                                    <button class="bg-black/5 text-gray-400 font-bold py-2 px-6 rounded-full cursor-not-allowed" disabled>iOS</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Other steps remain the same -->
+                        <!-- Step 1: Welcome -->
+                        <div id="step-1" class="step future"><div class="w-full max-w-lg mx-auto p-6 flex flex-col flex-grow justify-center"><h2 class="text-sm font-semibold uppercase text-gray-500 animated-item">Asistente Vitrum x UCuenca</h2><h1 class="text-7xl font-black my-2 leading-none animated-item" style="animation-delay: 100ms;">Conéctate a</h1><h1 class="text-7xl font-black text-purple-600 animated-item" style="animation-delay: 200ms;">Eduroam</h1><p class="text-lg text-gray-600 mt-6 animated-item" style="animation-delay: 300ms;">Esta guía te ayudará en el proceso de configuración para acceder a la red Wi-Fi de la Universidad de Cuenca.</p></div></div>
+                        <!-- Step 2: About Eduroam -->
+                        <div id="step-2" class="step future"><div class="w-full max-w-lg mx-auto p-6 flex flex-col flex-grow justify-center"><h1 class="text-5xl font-black mb-6 animated-item">¿Qué es Eduroam?</h1><p class="mb-8 text-gray-600 animated-item" style="animation-delay: 100ms;">Eduroam (Education Roaming) es un servicio mundial que ofrece acceso a internet seguro y universal en todas las instituciones afiliadas.</p><ul class="space-y-4"><li class="flex items-center animated-item" style="animation-delay: 200ms;"><svg class="w-6 h-6 mr-3 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Acceso global en universidades aliadas.</li><li class="flex items-center animated-item" style="animation-delay: 300ms;"><svg class="w-6 h-6 mr-3 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Conexión de alta velocidad y segura.</li><li class="flex items-center animated-item" style="animation-delay: 400ms;"><svg class="w-6 h-6 mr-3 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Una vez configurado, te conectarás automáticamente.</li></ul></div></div>
+                        <!-- Step 3: Prepare to Install -->
+                        <div id="step-3" class="step future"><div class="w-full max-w-lg mx-auto p-6 flex flex-col flex-grow justify-center"><div class="flex items-center gap-4 mb-6"><svg class="w-12 h-12 text-purple-600 animated-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><h1 class="text-5xl font-black animated-item" style="animation-delay: 100ms;">1. Prepárate</h1></div><p class="mb-4 text-gray-600 animated-item" style="animation-delay: 200ms;">Al final de la guía estará el enlace de instalación directa para tu dispositivo.</p><p class="mb-4 text-gray-600 animated-item" style="animation-delay: 300ms;">Se te guiará previamente cómo configurar la app eduroam y por ello es importante que prestes atención a todo el proceso de la guía.</p></div></div>
+                        <!-- Step 4: Search University -->
+                        <div id="step-4" class="step future"><div class="w-full max-w-lg mx-auto p-6 flex flex-col flex-grow justify-center"><div class="flex items-center gap-4 mb-6"><svg class="w-12 h-12 text-purple-600 animated-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg><h1 class="text-5xl font-black animated-item" style="animation-delay: 100ms;">2. Busca tu Institución</h1></div><p class="mb-6 text-gray-600 animated-item" style="animation-delay: 200ms;">Abre la app y en el campo de búsqueda, escribe y selecciona <span class="font-bold">"Universidad de Cuenca"</span>.</p><div class="bg-black/5 w-full h-48 rounded-xl flex items-center justify-center animated-item" style="animation-delay: 300ms;"><p class="text-gray-400">Aquí irá una imagen del paso</p></div></div></div>
+                        <!-- Step 5: Credentials -->
+                        <div id="step-5" class="step future"><div class="w-full max-w-lg mx-auto p-6 flex flex-col flex-grow justify-center"><div class="flex items-center gap-4 mb-6"><svg class="w-12 h-12 text-green-600 animated-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><h1 class="text-5xl font-black animated-item" style="animation-delay: 100ms;">3. Ingresa tus Datos</h1></div><p class="mb-6 text-gray-600 animated-item" style="animation-delay: 200ms;">Ingresa tu correo institucional y contraseña.</p><div class="space-y-4"><div class="bg-black/5 p-4 rounded-xl animated-item" style="animation-delay: 300ms;"><label class="text-sm text-gray-500">Correo Institucional</label><p class="font-mono text-gray-800">tu.usuario@ucuenca.edu.ec</p></div><div class="bg-black/5 p-4 rounded-xl animated-item" style="animation-delay: 400ms;"><label class="text-sm text-gray-500">Contraseña</label><p class="font-mono text-gray-800">••••••••••</p></div></div></div></div>
+                        <!-- Step 6: Save Network -->
+                        <div id="step-6" class="step future"><div class="w-full max-w-lg mx-auto p-6 flex flex-col flex-grow justify-center"><h1 class="text-5xl font-black mb-6 animated-item">4. Guarda la Red</h1><p class="text-lg mb-6 text-gray-600 animated-item" style="animation-delay: 100ms;">¡Atención! Después de ingresar tus datos, aparecerá una ventana emergente. Presiona en <span class="font-bold">"Guardar"</span> o <span class="font-bold">"Conectar"</span>.</p><div class="bg-yellow-400/20 text-yellow-800 border-l-4 border-yellow-500 p-4 rounded-r-lg animated-item" style="animation-delay: 200ms;"><p class="font-bold">Paso Crucial</p><p>No omitas esta ventana. Es necesaria para que tu dispositivo recuerde la red.</p></div></div></div>
+                        <!-- Step 7: Final Permission -->
+                        <div id="step-7" class="step future"><div class="w-full max-w-lg mx-auto p-6 flex flex-col flex-grow justify-center"><h1 class="text-5xl font-black mb-6 animated-item">5. Permiso Final</h1><p class="text-lg mb-6 text-gray-600 animated-item" style="animation-delay: 100ms;">Sal de la aplicación. Es posible que el sistema te pida un último permiso. Debes presionar en <span class="font-bold">"Permitir"</span>.</p><div class="bg-black/5 w-full h-48 rounded-xl flex items-center justify-center animated-item" style="animation-delay: 200ms;"><p class="text-gray-400">Imagen de la ventana de permiso</p></div></div></div>
+                        <!-- Step 8: Success -->
+                        <div id="step-8" class="step future"><div class="w-full max-w-lg mx-auto p-6 flex flex-col flex-grow justify-center items-center text-center"><div class="text-8xl mb-6 animated-item">🚀</div><h1 class="text-5xl font-black mb-4 animated-item" style="animation-delay: 100ms;">Inicia el Proceso</h1><p class="text-lg text-gray-600 mb-8 animated-item" style="animation-delay: 200ms;">Inicia el proceso de configuración como lo detallamos en esta guía. Si te pierdes, no te preocupes, siempre puedes regresar y volver a ver esta guía.</p><a href="https://play.google.com/store/apps/details?id=app.eduroam.geteduroam" target="_blank" class="block w-full text-center bg-blue-600 text-white font-bold py-4 px-6 rounded-full hover:bg-blue-700 transition text-lg animated-item" style="animation-delay: 300ms;">Instalar geteduroam</a><button onclick="restartGuide()" class="mt-4 text-gray-500 font-bold py-2 px-6 rounded-full hover:bg-black/5 transition animated-item" style="animation-delay: 400ms;">Reiniciar Guía</button></div></div>
+
+                    </div>
+
+                    <!-- Navigation -->
+                    <div id="navigation" class="p-4 sm:p-6 mt-auto flex-shrink-0 flex justify-between items-center opacity-0" style="transition: opacity 0.5s;">
+                        <button id="back-btn" onclick="navigate(-1)" class="font-bold text-gray-500 py-3 px-4 hover:text-black transition">Atrás</button>
+                        <button id="next-btn" onclick="navigate(1)" class="bg-black text-white font-bold py-4 px-10 rounded-full hover:bg-gray-800 transition">Siguiente</button>
+                    </div>
+
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Login Screen -->
-    <div id="login-screen" class="screen fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none">
-        <div class="relative w-full max-w-sm h-[500px]">
-            <!-- Step 1: Choice -->
-            <div id="login-step-1" class="login-step w-full h-full absolute top-0 left-0">
-                <div class="w-full h-full p-8 bg-pink-200 rounded-3xl shadow-2xl flex flex-col items-center justify-center border border-pink-300 backdrop-blur-md bg-opacity-80">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">¿Cómo quieres empezar?</h2>
-                    <p class="text-gray-600 mb-8 text-center">Tus datos, a tu manera.</p>
-                    <div class="w-full grid grid-cols-2 gap-4">
-                        <button id="google-login-choice-btn" class="h-48 flex flex-col justify-between items-center bg-white/50 hover:bg-white/80 transition-all p-4 rounded-2xl shadow-md border border-white/60 transform hover:scale-105">
-                            <span class="font-semibold text-gray-700">Cargando API...</span>
-                            <svg class="w-16 h-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.8c3.3 0 5.8 1.4 7.6 3.1l5.8-5.8C34.2 4.1 29.6 2 24 2 14.8 2 7.3 7.8 4 15.9l7 5.4c1.4-4.2 5.3-7.5 9.9-7.5z"/><path fill="#34A853" d="M24 46c5.5 0 10.2-1.9 13.6-5.1l-6.6-5.1c-1.8 1.2-4.1 2-6.9 2-4.6 0-8.5-3.3-9.9-7.5l-7 5.4C7.3 40.2 14.8 46 24 46z"/><path fill="#FBBC05" d="M14.1 28.2c-.5-1.5-.7-3.1-.7-4.8s.2-3.3.7-4.8l-7-5.4C5.5 16.4 4 20 4 24c0 4 .5 7.6 1.9 11.2l7.2-5.8z"/><path fill="#EA4335" d="M24 17.3c2.6 0 4.7.9 6.2 2.3l6-6C33.3 10.8 29.1 9 24 9c-8.2 0-15.2 5.7-18.1 13.5L13 28c1.3-4.4 5.3-7.7 11-7.7z"/><path fill="none" d="M2 2h44v44H2z"/></svg>
-                        </button>
-                        <button id="offline-login-choice-btn" class="h-48 flex flex-col justify-between items-center bg-white/50 hover:bg-white/80 transition-all p-4 rounded-2xl shadow-md border border-white/60 transform hover:scale-105">
-                             <span class="font-semibold text-gray-700">Sin conexión</span>
-                            <svg class="w-16 h-16 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <!-- Step 2: Username & Photo -->
-            <div id="login-step-2" class="login-step w-full h-full absolute top-0 left-0 opacity-0 pointer-events-none">
-                 <div class="w-full h-full p-8 bg-pink-200 rounded-3xl shadow-2xl flex flex-col justify-between border border-pink-300 backdrop-blur-md bg-opacity-80">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">Crea tu perfil</h2>
-                        <p class="text-gray-600 mb-8 text-center">Añade un nombre y una foto.</p>
-                    </div>
-                    <form id="username-form" class="w-full flex flex-col items-center">
-                        <div class="relative mb-6">
-                            <img id="profile-pic-preview" src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="Foto de perfil" class="w-32 h-32 rounded-full object-cover shadow-lg border-4 border-white/50">
-                            <label for="profile-pic-input" class="absolute bottom-0 right-0 w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-pink-600 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>
-                            </label>
-                            <input id="profile-pic-input" type="file" class="hidden" accept="image/*">
-                        </div>
-                        <input id="username-input" type="text" placeholder="Escribe tu nombre aquí" class="w-full text-center bg-white/70 border border-pink-200 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700" required>
-                    </form>
-                    <button id="username-submit-btn" class="self-end w-14 h-14 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors shadow-lg flex items-center justify-center transform hover:scale-110">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <!-- Step 3: PIN -->
-            <div id="login-step-3" class="login-step w-full h-full absolute top-0 left-0 opacity-0 pointer-events-none">
-                 <div class="w-full h-full p-8 bg-pink-200 rounded-3xl shadow-2xl flex flex-col justify-center border border-pink-300 backdrop-blur-md bg-opacity-80">
-                    <div>
-                        <h2 id="pin-greeting" class="text-2xl font-bold text-gray-800 mb-2 text-center">Crea tu PIN</h2>
-                        <p id="pin-subtitle" class="text-gray-600 mb-8 text-center">Un PIN de 4 dígitos para tu seguridad.</p>
-                        <div id="pin-dots-container" class="flex justify-center gap-4 mb-8">
-                            <div class="pin-display-dot w-4 h-4 bg-white/50 rounded-full"></div>
-                            <div class="pin-display-dot w-4 h-4 bg-white/50 rounded-full"></div>
-                            <div class="pin-display-dot w-4 h-4 bg-white/50 rounded-full"></div>
-                            <div class="pin-display-dot w-4 h-4 bg-white/50 rounded-full"></div>
-                        </div>
-                    </div>
-                    <div id="pin-keypad" class="grid grid-cols-3 gap-4 w-max mx-auto">
-                        <!-- Keypad buttons will be generated by JS -->
-                    </div>
-                 </div>
-            </div>
-        </div>
-    </div>
+    <script>
+        let currentStep = 0;
+        const steps = document.querySelectorAll('.step');
+        const totalSteps = steps.length - 1; 
+        const progressBar = document.getElementById('progress-bar');
+        const navigation = document.getElementById('navigation');
+        const nextBtn = document.getElementById('next-btn');
 
-    <!-- Notification Element -->
-    <div id="notification" class="fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-md transform translate-x-[120%] transition-transform duration-300">
-        Sync complete!
-    </div>
+        // --- UI Update Functions ---
+        function updateUI() {
+            steps.forEach((step, index) => {
+                step.classList.remove('current', 'past', 'future');
+                if (index === currentStep) step.classList.add('current');
+                else if (index < currentStep) step.classList.add('past');
+                else step.classList.add('future');
+            });
+            
+            const progress = currentStep > 0 ? ((currentStep - 1) / (totalSteps - 2)) * 100 : 0;
+            progressBar.style.width = `${Math.min(progress, 100)}%`;
 
+            navigation.style.opacity = (currentStep > 0 && currentStep < totalSteps) ? '1' : '0';
+            navigation.style.pointerEvents = (currentStep > 0 && currentStep < totalSteps) ? 'auto' : 'none';
+            
+            document.getElementById('back-btn').style.visibility = (currentStep <= 1) ? 'hidden' : 'visible';
+            nextBtn.textContent = (currentStep === totalSteps - 1) ? 'Finalizar' : 'Siguiente';
+        }
 
-    <!-- Main App Content -->
-    <div id="main-content" class="opacity-0 pointer-events-none">
-        <main id="desktop" class="h-screen w-screen relative p-4 md:p-6">
-            <div id="app-window" class="hidden absolute bg-pink-50 rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-pink-200">
-                <header class="bg-pink-100 px-4 py-2 flex items-center justify-between border-b border-pink-200 cursor-move">
-                    <div class="flex items-center gap-2">
-                        <div id="window-icon" class="w-6 h-6"></div>
-                        <h2 id="window-title" class="font-semibold text-gray-800">Nombre de la App</h2>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button id="maximize-window-btn" class="w-6 h-6 bg-green-300 rounded-full hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-green-200 transition-colors flex items-center justify-center"></button>
-                        <button id="close-window-btn" class="w-6 h-6 bg-red-400 rounded-full hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-300 transition-colors"></button>
-                    </div>
-                </header>
-                <div class="flex-grow rounded-b-2xl overflow-hidden flex items-center justify-center">
-                    <div id="loader" class="spinner">
-                        <div></div><div></div><div></div><div></div><div></div><div></div>
-                    </div>
-                    <iframe id="app-content-frame" src="about:blank" class="w-full h-full border-none app-content hidden" title="App Content"></iframe>
-                </div>
-            </div>
-        </main>
+        // --- Navigation Functions ---
+        function navigate(direction) {
+            const newStep = currentStep + direction;
+            if (newStep >= 0 && newStep <= totalSteps) {
+                currentStep = newStep;
+                updateUI();
+            }
+        }
         
-        <div id="start-menu" class="hidden absolute bottom-20 left-4 w-96 h-[480px] bg-pink-100 rounded-2xl shadow-2xl p-4 flex flex-col justify-start border border-pink-200">
-            <h2 id="greeting" class="text-3xl font-bold text-gray-800 text-center mb-4 animate-on-show"></h2>
-            <div class="relative flex items-center justify-center mx-auto animate-on-show" style="--s: 220px;">
-                <div class="wavy-circle-spinner shadow-md"></div>
-                <img id="start-menu-avatar" src="https://i.pravatar.cc/180?u=eleanor" alt="User Avatar" class="absolute w-[180px] h-[180px] rounded-full object-cover shadow-lg border-4 border-pink-100">
-            </div>
-            <div class="flex-grow animate-on-show"></div>
-            <div class="flex items-center justify-center gap-3 w-full animate-on-show">
-                <button class="w-12 h-12 bg-pink-200 hover:bg-pink-300 transition rounded-full flex items-center justify-center text-pink-700 shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                </button>
-                <button class="w-12 h-12 bg-pink-200 hover:bg-pink-300 transition rounded-full flex items-center justify-center text-pink-700 shadow-sm">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                </button>
-                <button id="sync-cloud-btn" class="px-5 py-3 bg-pink-200 hover:bg-pink-300 transition rounded-full flex items-center justify-center text-pink-700 shadow-sm text-sm font-semibold">Sincronizar en la nube</button>
-                <button class="px-5 py-3 bg-pink-200 hover:bg-pink-300 transition rounded-full flex items-center justify-center text-pink-700 shadow-sm text-sm font-semibold">Apps</button>
-                <button class="px-5 py-3 bg-pink-200 hover:bg-pink-300 transition rounded-full flex items-center justify-center text-pink-700 shadow-sm text-sm font-semibold">Perfil</button>
-            </div>
-        </div>
+        function startGuide(os) {
+            if (os === 'Android') {
+                currentStep = 1;
+                updateUI();
+            } else {
+                alert('Guía para ' + os + ' no está disponible aún.');
+            }
+        }
 
-        <nav class="fixed bottom-4 left-4 right-4 bg-pink-200 px-3 py-2 rounded-full shadow-lg border border-pink-300">
-            <div class="flex items-center justify-between w-full">
-                <div class="flex items-center gap-3">
-                    <button id="start-btn" class="pulsating-btn w-10 h-10 bg-white rounded-full shadow-lg focus:outline-none focus:ring-4 focus:ring-white/50 bg-cover bg-center" style="background-image: url('https://i.pravatar.cc/40?u=eleanor')"></button>
-                    <div class="w-px h-6 bg-pink-300"></div>
-                    <div class="flex items-center gap-3">
-                        <button class="app-icon w-10 h-10 bg-rose-400 rounded-full flex items-center justify-center text-white text-xl shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-rose-300" data-url="https://www.wikipedia.org/" data-title="Navegador" data-icon-svg='<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>'></button>
-                        <button class="app-icon w-10 h-10 bg-fuchsia-400 rounded-full flex items-center justify-center text-white text-xl shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-fuchsia-300" data-url="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M" data-title="Música" data-icon-svg='<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>'></button>
-                        <button class="app-icon w-10 h-10 bg-purple-400 rounded-full flex items-center justify-center text-white text-xl shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-purple-300" data-url="https://www.bing.com/" data-title="Archivos" data-icon-svg='<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>'></button>
-                        <button class="app-icon w-10 h-10 bg-indigo-400 rounded-full flex items-center justify-center text-white text-xl shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-indigo-300" data-url="https://duckduckgo.com/" data-title="Ajustes" data-icon-svg='<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>'></button>
-                    </div>
-                </div>
-                <div id="clock-container">
-                    <div id="clock" class="bg-pink-100 text-gray-800 text-sm font-semibold px-4 py-1.5 rounded-full"></div>
-                </div>
-            </div>
-        </nav>
-    </div>
-    <script type="module" src="main.js"></script>
+        function restartGuide() {
+            currentStep = 0;
+            updateUI();
+            // We don't need to run detection again, just show the first step.
+        }
+
+        // --- OS Detection and Initial Animation ---
+        function getDetectedOS() {
+            if (navigator.userAgent.match(/Android/i)) return "Android";
+            if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) return "iOS";
+            if (navigator.userAgent.match(/Windows/i)) return "Windows";
+            if (navigator.userAgent.match(/Mac/i)) return "macOS";
+            if (navigator.userAgent.match(/Linux/i)) return "Linux";
+            return "Desconocido";
+        }
+
+        function getOSLogo(os) {
+            switch (os) {
+                case "Android": return `<svg class="w-full h-full text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M15.2,5.3c0,0-0.3-1.2-1-1.9c-0.8-0.8-2-1-2-1s-1.1,0.1-1.9,0.8C9.5,4,9.1,5,9.1,5c0,0-1.6,0.5-2,2.2c-0.5,1.7-0.1,3.3,0.1,3.9c0.2,0.6,0.4,0.9,0.4,0.9s-0.5,1.2-0.5,1.8c0,0.6,0.5,1.2,0.5,1.2s-0.2,1.7,0.8,2.6c1,1,2.6,0.9,2.6,0.9l0.9-0.9l0.9,0.9c0,0,1.7,0.1,2.6-0.9c1-1,0.8-2.6,0.8-2.6s0.5-0.6,0.5-1.2c0-0.6-0.5-1.8-0.5-1.8s0.2-0.3,0.4-0.9c0.2-0.6,0.5-2.2,0.1-3.9C16.8,5.7,15.2,5.3,15.2,5.3z M12.9,4.4c0.1,0,0.2-0.1,0.2-0.2c0-0.1-0.1-0.2-0.2-0.2c-0.1,0-0.2,0.1-0.2,0.2C12.7,4.3,12.8,4.4,12.9,4.4z M11.1,4.4c0.1,0,0.2-0.1,0.2-0.2c0-0.1-0.1-0.2-0.2-0.2c-0.1,0-0.2,0.1-0.2,0.2C10.9,4.3,11,4.4,11.1,4.4z M12,14.5c-2.2,0-4-1.8-4-4V9.2h8v1.2C16,12.7,14.2,14.5,12,14.5z"/></svg>`;
+                case "iOS": return `<svg class="w-full h-full text-gray-800" fill="currentColor" viewBox="0 0 24 24"><path d="M14.2,3.3c-0.2-0.2-0.4-0.4-0.7-0.6c-0.6-0.3-1.2-0.5-1.9-0.5c-0.5,0-1.1,0.1-1.6,0.4C8.9,3,8.4,3.4,8.1,3.9c-1.3,2-1.1,4.9,0.5,6.6c0.3,0.3,0.7,0.6,1.1,0.8c0.5,0.2,1,0.3,1.5,0.3c0.1,0,0.2,0,0.3,0c0.4,0,0.9-0.1,1.3-0.3c0.4-0.2,0.8-0.5,1.1-0.8c-1.4,1.3-2.6,2-3.5,2.1c-0.3,0-0.5,0-0.8,0c-0.8,0-1.5-0.2-2.1-0.5c-0.1,0-0.1,0-0.2,0c-1.2,2,0.2,4.5,0.8,5.4c0.6,0.9,1.4,1.5,2.4,1.5c0.5,0,1-0.2,1.5-0.5c0.6-0.3,1.1-0.8,1.5-1.5c0.1-0.2,0.2-0.4,0.3-0.6c0.4-0.8,0.6-1.6,0.6-2.5c0-0.5-0.1-1-0.2-1.5c-0.2-0.7-0.4-1.2-0.5-1.4c-0.1-0.2-0.1-0.3-0.1-0.3c1.7-1,2.8-3,2.8-5.2C16.8,5.3,15.8,3.9,14.2,3.3z M12.7,2c0.4,0,0.7,0.1,1.1,0.4c0.5,0.4,0.8,1,0.6,1.6c-0.1,0.4-0.4,0.8-0.8,1c-0.4,0.2-0.9,0.2-1.3,0c-0.5-0.4-0.8-1-0.6-1.6C11.8,2.5,12.2,2.1,12.7,2z"/></svg>`;
+                case "Windows": return `<svg class="w-full h-full text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M11.4,22.6l12.1-1.8V12h-12.1V22.6z M11.4,11.1V2.3L23.5,1v9.2H11.4z M0.5,12h10V21.7L0.5,20V12z M0.5,11.1V3.1l10-1.4v9.4 H0.5z"/></svg>`;
+                default: return `<svg class="w-full h-full text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>`;
+            }
+        }
+
+        function runInitialAnimation() {
+            const os = getDetectedOS();
+            const logo = getOSLogo(os);
+
+            setTimeout(() => {
+                const splashText = document.getElementById('splash-text');
+                const logoContainer = document.getElementById('os-logo-container');
+                splashText.parentElement.style.opacity = '0';
+                
+                setTimeout(() => {
+                    splashText.style.display = 'none';
+                    logoContainer.innerHTML = logo;
+                    logoContainer.parentElement.style.opacity = '1';
+                    logoContainer.style.opacity = '1';
+                    logoContainer.style.transform = 'scale(1)';
+                }, 500)
+
+
+                setTimeout(() => {
+                    document.getElementById('splash-screen').style.opacity = '0';
+                    document.getElementById('splash-screen').style.pointerEvents = 'none';
+                    document.querySelector('.glass-pane').classList.add('visible');
+                    
+                    setupGuide(os);
+                }, 2000);
+
+            }, 1500);
+        }
+
+        function setupGuide(os) {
+            document.getElementById('os-info').textContent = `Detectado: ${os}`;
+            updateUI();
+            if (os === "Android") {
+                setTimeout(() => {
+                    if (currentStep === 0) startGuide('Android');
+                }, 1500);
+            }
+        }
+        
+        // --- Parallax Effect ---
+        function initParallax() {
+            const scene = document.getElementById('parallax-scene');
+            const layers = scene.querySelectorAll('.layer');
+            const sensitivity = 20;
+
+            const handleMove = (x, y) => {
+                const x_axis = -(x - window.innerWidth / 2) / sensitivity;
+                const y_axis = -(y - window.innerHeight / 2) / sensitivity;
+
+                layers.forEach(layer => {
+                    const depth = layer.getAttribute('data-depth');
+                    layer.style.transform = `translate3d(${x_axis * depth}px, ${y_axis * depth}px, 0)`;
+                });
+            }
+
+            if (window.DeviceOrientationEvent && 'ontouchstart' in window) {
+                window.addEventListener('deviceorientation', (event) => {
+                    const y = event.beta;  // range [-180, 180]
+                    const x = event.gamma; // range [-90, 90]
+                    const origin_x = window.innerWidth / 2;
+                    const origin_y = window.innerHeight / 2;
+                    handleMove(origin_x + x * 5, origin_y + y * 3);
+                });
+            } else {
+                 window.addEventListener('mousemove', (event) => {
+                    handleMove(event.clientX, event.clientY);
+                });
+            }
+        }
+
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            runInitialAnimation();
+            initParallax();
+        });
+    </script>
 </body>
 </html>
 

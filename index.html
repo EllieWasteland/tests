@@ -3,76 +3,315 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración de Cuenta | Vitrum Space</title>
+    <title>Generador de Tickets | Vitrum Space</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs (versión modular v9+) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        
+        // Tu configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1W2yLlVHivzBQPZJVOgpApQeYnJUFzCs",
+            authDomain: "vitreumucuencahub.firebaseapp.com",
+            projectId: "vitreumucuencahub",
+            storageBucket: "vitreumucuencahub.firebasestorage.app",
+            messagingSenderId: "628136581064",
+            appId: "1:6281365-4602fd2fd"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // Referencias a elementos del DOM
+        const loadingView = document.getElementById('loading-view');
+        const loginView = document.getElementById('login-view');
+        const appView = document.getElementById('app-view');
+        const loginBtn = document.getElementById('google-login-btn');
+        const formSteps = document.querySelectorAll('.form-step');
+        const nextButtons = document.querySelectorAll('.next-btn');
+        const backButtons = document.querySelectorAll('.back-btn');
+        const submitButton = document.getElementById('submit-btn');
+
+        let currentStep = 0;
+        let userData = {};
+
+        // --- MANEJO DE LA AUTENTICACIÓN ---
+        onAuthStateChanged(auth, user => {
+            loadingView.classList.add('hidden');
+            if (user) {
+                if (!user.email.endsWith('@ucuenca.edu.ec')) {
+                    showModal('Acceso denegado', 'Debes usar una cuenta de correo institucional (@ucuenca.edu.ec).');
+                    signOut(auth);
+                    return;
+                }
+                loginView.classList.add('hidden');
+                appView.classList.remove('hidden');
+                initializeForm(user);
+            } else {
+                appView.classList.add('hidden');
+                loginView.classList.remove('hidden');
+            }
+        });
+
+        loginBtn.addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch(error => {
+                console.error("Error de autenticación:", error);
+                showModal("Error de autenticación", error.message);
+            });
+        });
+
+        // --- LÓGICA DEL FORMULARIO POR PASOS ---
+        function showStep(stepIndex) {
+            formSteps.forEach((step, index) => {
+                step.classList.toggle('hidden', index !== stepIndex);
+            });
+        }
+        
+        nextButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Validación simple
+                const currentInputs = formSteps[currentStep].querySelectorAll('input[required], select[required]');
+                let isValid = true;
+                currentInputs.forEach(input => {
+                    if (!input.value) {
+                        input.classList.add('border-red-500');
+                        isValid = false;
+                    } else {
+                        input.classList.remove('border-red-500');
+                    }
+                });
+
+                if (isValid && currentStep < formSteps.length - 1) {
+                    currentStep++;
+                    showStep(currentStep);
+                } else if (!isValid) {
+                     showModal('Campos requeridos', 'Por favor, completa todos los campos obligatorios para continuar.');
+                }
+            });
+        });
+
+        backButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (currentStep > 0) {
+                    currentStep--;
+                    showStep(currentStep);
+                }
+            });
+        });
+
+        // --- INICIALIZACIÓN Y ACTUALIZACIÓN DEL TICKET ---
+        function initializeForm(user) {
+            const nameParts = user.displayName.split(' ');
+            const lastName = nameParts.pop() || '';
+            const firstName = nameParts.join(' ');
+
+            // Poblar datos iniciales
+            document.getElementById('firstName').value = firstName;
+            document.getElementById('lastName').value = lastName;
+            document.getElementById('email').value = user.email;
+
+            // Almacenar datos básicos
+            userData = {
+                uid: user.uid,
+                email: user.email,
+                photoURL: user.photoURL,
+            };
+
+            // Generar datos aleatorios para el ticket
+            userData.zone = String(Math.floor(Math.random() * 99) + 1).padStart(2, '0');
+            userData.row = String(Math.floor(Math.random() * 20) + 1).padStart(2, '0');
+            userData.seat = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+            userData.ticketNumber = `no.${Math.floor(Math.random() * 9000000) + 1000000}`;
+
+            // Actualizar vista previa del ticket
+            updateTicketPreview();
+            generateBarcode();
+            showStep(0);
+            attachInputListeners();
+        }
+
+        function updateTicketPreview() {
+            // Obtener valores del formulario
+            userData.firstName = document.getElementById('firstName').value;
+            userData.lastName = document.getElementById('lastName').value;
+            userData.nickname = document.getElementById('nickname').value;
+            userData.major = document.getElementById('major').value;
+            userData.cycle = document.getElementById('cycle').value;
+            userData.modality = document.getElementById('modality').value;
+            userData.isContinuous = document.getElementById('isContinuous').checked;
+            userData.useAI = document.getElementById('useAI').checked;
+            
+            // Actualizar elementos en el ticket
+            document.getElementById('ticket-username').textContent = userData.nickname || `${userData.firstName.split(' ')[0]}`;
+            document.getElementById('ticket-photo').src = userData.photoURL || 'https://placehold.co/80x80/1a202c/FFF?text=User';
+            document.getElementById('ticket-zone').textContent = userData.zone;
+            document.getElementById('ticket-row').textContent = userData.row;
+            document.getElementById('ticket-seat').textContent = userData.seat;
+            document.getElementById('ticket-number').textContent = userData.ticketNumber;
+        }
+
+        function generateBarcode() {
+            const barcodeContainer = document.getElementById('ticket-barcode');
+            barcodeContainer.innerHTML = '';
+            for (let i = 0; i < 50; i++) {
+                const bar = document.createElement('div');
+                const width = Math.random() > 0.5 ? '2px' : '1px';
+                bar.style.width = width;
+                bar.style.height = '100%';
+                bar.style.backgroundColor = 'black';
+                barcodeContainer.appendChild(bar);
+            }
+        }
+        
+        function attachInputListeners() {
+            document.querySelectorAll('input, select').forEach(element => {
+                element.addEventListener('input', updateTicketPreview);
+            });
+        }
+        
+        // --- FINALIZAR Y ENVIAR ---
+        submitButton.addEventListener('click', () => {
+            updateTicketPreview(); // Asegurarse de tener los últimos datos
+            
+            const finalUserData = {
+                 ...userData,
+                 displayName: `${userData.firstName} ${userData.lastName}`
+            };
+
+            const jsonString = JSON.stringify(finalUserData);
+            const base64String = btoa(jsonString);
+            
+            const targetUrl = `http://127.0.0.1:5500/index.html?userData=${encodeURIComponent(base64String)}`;
+            
+            console.log("Redirigiendo a:", targetUrl);
+            console.log("Datos enviados (decodificados):", finalUserData);
+            
+            showModal('¡Configuración Completa!', `Tu ticket de acceso ha sido generado. Serás redirigido a la aplicación principal.`, () => {
+                 window.location.href = targetUrl;
+            });
+        });
+
+        // --- MODAL ---
+        function showModal(title, message, onConfirm) {
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const modalConfirm = document.getElementById('modal-confirm-btn');
+
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            
+            const newConfirmBtn = modalConfirm.cloneNode(true);
+            modalConfirm.parentNode.replaceChild(newConfirmBtn, modalConfirm);
+
+            if (onConfirm) {
+                newConfirmBtn.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                    onConfirm();
+                });
+            } else {
+                 newConfirmBtn.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                });
+            }
+            modal.classList.remove('hidden');
+        }
+    </script>
+
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A; /* slate-900 */
         }
-        #loader {
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            border-left-color: #22d3ee;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+        
+        /* Efecto holográfico */
+        .holographic-card {
+            position: relative;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            overflow: hidden;
+            transform-style: preserve-3d;
+            perspective: 1000px;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+
+        .holographic-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(115deg, transparent 20%, rgba(100, 255, 218, 0.2) 35%, rgba(100, 218, 255, 0.25) 50%, transparent 80%);
+            mix-blend-mode: screen;
+            opacity: 0.8;
+            transition: transform 0.3s ease-out;
+            transform: translate(-50%, -50%) rotate(0deg);
+        }
+
+        /* Animación para el brillo */
+        .holographic-card:hover::before {
+             opacity: 1;
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4">
+<body class="text-gray-200 flex items-center justify-center min-h-screen p-4">
 
-    <div id="app-container" class="bg-gray-800 border border-gray-700 rounded-2xl p-8 max-w-2xl w-full shadow-lg">
-        
-        <!-- Vista de Carga Inicial -->
-        <div id="loading-view" class="text-center">
-            <div id="loader" class="mx-auto"></div>
-            <p class="mt-4 text-gray-400">Iniciando...</p>
-        </div>
+    <!-- Loader -->
+    <div id="loading-view" class="text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto"></div>
+        <p class="mt-4 text-gray-400">Iniciando aplicación...</p>
+    </div>
 
-        <!-- Vista de Login -->
-        <div id="login-view" class="hidden text-center">
-            <h1 class="text-3xl font-bold text-cyan-400">Configura tu Cuenta</h1>
-            <p class="text-gray-400 mt-2 mb-8">Usa tu cuenta institucional de Google para empezar.</p>
-            <button id="google-login-btn" class="inline-flex items-center justify-center gap-3 bg-white text-gray-800 font-semibold py-3 px-6 rounded-lg transition-transform transform hover:scale-105">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.19,4.73C14.03,4.73 15.6,5.36 16.81,6.45L18.87,4.59C17.01,3.01 14.7,2 12.19,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.19,22C17.6,22 21.54,18.33 21.54,12.29C21.54,11.77 21.48,11.44 21.35,11.1Z"/></svg>
-                <span>Iniciar Sesión con Google</span>
-            </button>
-        </div>
+    <!-- Login -->
+    <div id="login-view" class="hidden text-center bg-slate-800 p-10 rounded-2xl shadow-2xl max-w-md w-full">
+         <h1 class="text-3xl font-bold text-cyan-400 mb-2">Generador de Tickets</h1>
+         <p class="text-slate-400 mb-8">Usa tu cuenta institucional para crear tu pase de acceso.</p>
+         <button id="google-login-btn" class="inline-flex items-center justify-center gap-3 bg-white text-gray-800 font-semibold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-lg">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.19,4.73C14.03,4.73 15.6,5.36 16.81,6.45L18.87,4.59C17.01,3.01 14.7,2 12.19,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.19,22C17.6,22 21.54,18.33 21.54,12.29C21.54,11.77 21.48,11.44 21.35,11.1Z"/></svg>
+             <span>Iniciar Sesión con Google</span>
+         </button>
+    </div>
 
-        <!-- Vista del Formulario de Configuración -->
-        <div id="form-view" class="hidden">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-cyan-400">Completa tu Perfil</h1>
-                <p class="text-gray-400 mt-2">Personaliza tu experiencia en la aplicación.</p>
-            </div>
-
-            <form id="data-generator-form">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- App principal -->
+    <main id="app-view" class="hidden w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <!-- Columna del Formulario -->
+        <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl">
+            <!-- Paso 1: Datos Personales -->
+            <div id="step-1" class="form-step">
+                <h2 class="text-2xl font-bold text-cyan-400 mb-1">Paso 1: Datos Personales</h2>
+                <p class="text-slate-400 mb-6">Confirma tu nombre y elige un apodo.</p>
+                <div class="space-y-4">
                     <div>
                         <label for="firstName" class="block text-sm font-medium text-gray-300 mb-1">Nombres</label>
-                        <input type="text" id="firstName" class="w-full bg-gray-700 border-gray-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500" required>
+                        <input type="text" id="firstName" class="w-full bg-slate-700 border-slate-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500 transition" required>
                     </div>
                     <div>
                         <label for="lastName" class="block text-sm font-medium text-gray-300 mb-1">Apellidos</label>
-                        <input type="text" id="lastName" class="w-full bg-gray-700 border-gray-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500" required>
+                        <input type="text" id="lastName" class="w-full bg-slate-700 border-slate-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500 transition" required>
                     </div>
-                    <div class="md:col-span-2">
+                    <div>
+                        <label for="nickname" class="block text-sm font-medium text-gray-300 mb-1">Apodo (en el ticket)</label>
+                        <input type="text" id="nickname" class="w-full bg-slate-700 border-slate-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500 transition" placeholder="Opcional">
+                    </div>
+                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-300 mb-1">Email Institucional</label>
-                        <input type="email" id="email" class="w-full bg-gray-600 border-gray-500 rounded-lg px-4 py-2 cursor-not-allowed" readonly>
+                        <input type="email" id="email" class="w-full bg-slate-900 border-slate-700 rounded-lg px-4 py-2 cursor-not-allowed" readonly>
                     </div>
-                    <div>
-                        <label for="nickname" class="block text-sm font-medium text-gray-300 mb-1">Apodo (Opcional)</label>
-                        <input type="text" id="nickname" class="w-full bg-gray-700 border-gray-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500">
-                    </div>
-                    <div>
+                </div>
+                 <div class="mt-8 text-right">
+                    <button class="next-btn bg-cyan-500 hover:bg-cyan-600 text-slate-900 font-bold py-2 px-6 rounded-lg transition">Siguiente</button>
+                </div>
+            </div>
+            <!-- Paso 2: Datos Académicos -->
+            <div id="step-2" class="form-step hidden">
+                 <h2 class="text-2xl font-bold text-cyan-400 mb-1">Paso 2: Información Académica</h2>
+                <p class="text-slate-400 mb-6">Selecciona los detalles de tu carrera.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
                         <label for="major" class="block text-sm font-medium text-gray-300 mb-1">Carrera</label>
-                        <select id="major" class="w-full bg-gray-700 border-gray-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                        <select id="major" class="w-full bg-slate-700 border-slate-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500 transition">
                             <option value="periodismo">Periodismo</option>
                             <option value="educacion-basica" selected>E. Básica</option>
                             <option value="educacion-inicial">E. Inicial</option>
@@ -81,7 +320,7 @@
                     </div>
                     <div>
                         <label for="cycle" class="block text-sm font-medium text-gray-300 mb-1">Ciclo</label>
-                        <select id="cycle" class="w-full bg-gray-700 border-gray-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                        <select id="cycle" class="w-full bg-slate-700 border-slate-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500 transition">
                             <option value="1" selected>Ciclo 1</option>
                             <option value="2">Ciclo 2</option>
                             <option value="3">Ciclo 3</option>
@@ -92,130 +331,121 @@
                             <option value="8">Ciclo 8</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="md:col-span-2">
                         <label for="modality" class="block text-sm font-medium text-gray-300 mb-1">Modalidad</label>
-                        <select id="modality" class="w-full bg-gray-700 border-gray-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                        <select id="modality" class="w-full bg-slate-700 border-slate-600 rounded-lg px-4 py-2 focus:ring-cyan-500 focus:border-cyan-500 transition">
                             <option value="matutino" selected>Matutina</option>
                             <option value="vespertino">Vespertina</option>
                         </select>
                     </div>
-                    <div class="md:col-span-2 grid grid-cols-2 gap-6 mt-4">
-                        <div class="flex items-center p-4 border border-gray-600 rounded-lg">
-                            <input id="isContinuous" type="checkbox" checked class="h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600 focus:ring-cyan-500">
+                    <div class="md:col-span-2 mt-4 space-y-3">
+                        <div class="flex items-center p-3 bg-slate-700 rounded-lg">
+                            <input id="isContinuous" type="checkbox" checked class="h-4 w-4 rounded border-slate-500 bg-slate-600 text-cyan-600 focus:ring-cyan-500">
                             <label for="isContinuous" class="ml-3 block text-sm font-medium text-gray-300">¿Estudiante continuo?</label>
                         </div>
-                        <div class="flex items-center p-4 border border-gray-600 rounded-lg">
-                            <input id="useAI" type="checkbox" checked class="h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600 focus:ring-cyan-500">
-                            <label for="useAI" class="ml-3 block text-sm font-medium text-gray-300">¿Autocompletar horario?</label>
+                        <div class="flex items-center p-3 bg-slate-700 rounded-lg">
+                            <input id="useAI" type="checkbox" checked class="h-4 w-4 rounded border-slate-500 bg-slate-600 text-cyan-600 focus:ring-cyan-500">
+                            <label for="useAI" class="ml-3 block text-sm font-medium text-gray-300">¿Autocompletar horario con IA?</label>
                         </div>
                     </div>
                 </div>
-                <div class="mt-8">
-                    <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-cyan-500">
-                        Finalizar Configuración y Enviar
-                    </button>
+                 <div class="mt-8 flex justify-between">
+                    <button class="back-btn bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-6 rounded-lg transition">Atrás</button>
+                    <button class="next-btn bg-cyan-500 hover:bg-cyan-600 text-slate-900 font-bold py-2 px-6 rounded-lg transition">Siguiente</button>
                 </div>
-            </form>
+            </div>
+             <!-- Paso 3: Confirmación -->
+            <div id="step-3" class="form-step hidden text-center">
+                 <h2 class="text-2xl font-bold text-cyan-400 mb-1">¡Casi listo!</h2>
+                <p class="text-slate-400 mb-6">Revisa tu ticket de acceso a la derecha. Si todo está correcto, finaliza la configuración.</p>
+                <div class="bg-slate-700 p-4 rounded-lg">
+                    <p class="text-sm text-cyan-300">Al finalizar, tus datos se enviarán a la aplicación principal de Vitrum Space para configurar tu cuenta.</p>
+                </div>
+                 <div class="mt-8 flex flex-col items-center gap-4">
+                    <button id="submit-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105">
+                        Finalizar y Enviar Ticket
+                    </button>
+                     <button class="back-btn bg-transparent hover:bg-slate-700 text-slate-400 font-bold py-2 px-6 rounded-lg transition">Atrás</button>
+                </div>
+            </div>
+        </div>
+        <!-- Columna de la Vista Previa del Ticket -->
+        <div class="flex items-center justify-center">
+             <div class="w-full max-w-md rounded-2xl shadow-2xl holographic-card select-none" id="ticket-container" style="--mx: 50%; --my: 50%;">
+                 <div class="flex h-64 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10">
+                    <!-- Parte izquierda del ticket -->
+                    <div class="w-2/3 p-4 flex flex-col justify-between" style="background-image: url('https://images.unsplash.com/photo-1543717462-a45e4a83d154?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; border-radius: 1rem 0 0 1rem;">
+                        <div class="flex justify-between items-center">
+                            <span class="bg-black/50 text-white text-xs font-bold px-3 py-1 rounded-full">VIP ACCESS</span>
+                        </div>
+                        <div>
+                            <h3 class="text-white text-2xl font-black tracking-wider">VITRUM SPACE</h3>
+                            <p class="text-white/80 text-sm">ACCESO A PLATAFORMA</p>
+                        </div>
+                    </div>
+                    <!-- Línea punteada -->
+                    <div class="w-2 flex-shrink-0 bg-repeat-y bg-center" style="background-image: linear-gradient(to bottom, #0F172A 60%, transparent 40%); background-size: 1px 10px;"></div>
+                    <!-- Parte derecha del ticket -->
+                    <div class="w-1/3 bg-slate-100 text-black flex flex-col justify-between items-center p-2 rounded-r-2xl">
+                        <div class="text-center w-full">
+                           <img id="ticket-photo" src="https://placehold.co/80x80/1a202c/FFF?text=User" alt="User Photo" class="rounded-full w-12 h-12 mx-auto mb-1 border-2 border-slate-300">
+                           <div class="flex justify-around text-xs font-bold text-slate-600">
+                               <span>ZONA</span>
+                               <span>FILA</span>
+                               <span>ASIENTO</span>
+                           </div>
+                           <div class="flex justify-around text-lg font-black text-slate-800">
+                               <span id="ticket-zone">00</span>
+                               <span id="ticket-row">00</span>
+                               <span id="ticket-seat">0000</span>
+                           </div>
+                           <p id="ticket-number" class="text-xs text-slate-500 mt-1">no.0000000</p>
+                        </div>
+                        <div class="text-center w-full">
+                            <p id="ticket-username" class="font-bold text-lg">Username</p>
+                        </div>
+                        <div id="ticket-barcode" class="h-8 w-full flex items-end justify-center gap-[1px]">
+                           <!-- El código de barras se genera aquí -->
+                        </div>
+                    </div>
+                 </div>
+             </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-lg text-center">
+            <h3 id="modal-title" class="text-xl font-bold text-cyan-400 mb-2">Título</h3>
+            <p id="modal-message" class="text-slate-300 mb-6">Mensaje.</p>
+            <button id="modal-confirm-btn" class="bg-cyan-500 hover:bg-cyan-600 text-slate-900 font-bold py-2 px-6 rounded-lg transition">Entendido</button>
         </div>
     </div>
-
+    
     <script>
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1W2yLlVHivzBQPZJVOgpApQeYnJUFzCs",
-            authDomain: "vitreumucuencahub.firebaseapp.com",
-            projectId: "vitreumucuencahub",
-            storageBucket: "vitreumucuencahub.firebasestorage.app",
-            messagingSenderId: "628136581064",
-            appId: "1:6281365-4602fd2fd"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const provider = new firebase.auth.GoogleAuthProvider();
+        // Script para el efecto de brillo holográfico
+        const card = document.getElementById('ticket-container');
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const mouseX = (x / rect.width) * 100;
+            const mouseY = (y / rect.height) * 100;
+            
+            const rotateX = (mouseY - 50) / 3;
+            const rotateY = (mouseX - 50) / -3;
+            
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
 
-        const loadingView = document.getElementById('loading-view');
-        const loginView = document.getElementById('login-view');
-        const formView = document.getElementById('form-view');
-        const loginBtn = document.getElementById('google-login-btn');
-        const form = document.getElementById('data-generator-form');
-
-        // Manejo del estado de autenticación
-        auth.onAuthStateChanged(user => {
-            loadingView.classList.add('hidden');
-            if (user) {
-                // Si el usuario está autenticado, muestra el formulario
-                if (!user.email.endsWith('@ucuenca.edu.ec')) {
-                    alert('Acceso denegado. Debes usar una cuenta de correo institucional (@ucuenca.edu.ec).');
-                    auth.signOut();
-                    return;
-                }
-                populateForm(user);
-                loginView.classList.add('hidden');
-                formView.classList.remove('hidden');
-            } else {
-                // Si no, muestra la pantalla de login
-                formView.classList.add('hidden');
-                loginView.classList.remove('hidden');
+            const beforeElement = card.querySelector('::before');
+            if (beforeElement) {
+                beforeElement.style.transform = `translate(${mouseX - 50}%, ${mouseY - 50}%) rotate(${mouseX}deg)`;
             }
         });
 
-        // Evento para el botón de login
-        loginBtn.addEventListener('click', () => {
-            auth.signInWithPopup(provider).catch(error => {
-                console.error("Error de autenticación:", error);
-                alert("Error al iniciar sesión: " + error.message);
-            });
-        });
-
-        // Rellenar formulario con datos del usuario
-        function populateForm(user) {
-            document.getElementById('email').value = user.email;
-            const nameParts = user.displayName.split(' ');
-            const lastName = nameParts.pop() || '';
-            const firstName = nameParts.join(' ');
-            document.getElementById('firstName').value = firstName;
-            document.getElementById('lastName').value = lastName;
-        }
-
-        // Evento para enviar el formulario
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            const user = auth.currentUser;
-            if (!user) {
-                alert("No estás autenticado. Por favor, inicia sesión de nuevo.");
-                return;
-            }
-
-            const firstName = document.getElementById('firstName').value;
-            const lastName = document.getElementById('lastName').value;
-
-            const userData = {
-                uid: user.uid, // UID real de Firebase
-                email: user.email,
-                firstName: firstName,
-                lastName: lastName,
-                displayName: `${firstName} ${lastName}`,
-                nickname: document.getElementById('nickname').value,
-                photoURL: user.photoURL,
-                isContinuous: document.getElementById('isContinuous').checked,
-                major: document.getElementById('major').value,
-                cycle: document.getElementById('cycle').value,
-                modality: document.getElementById('modality').value,
-                useAI: document.getElementById('useAI').checked
-            };
-
-            const jsonString = JSON.stringify(userData);
-            const base64String = btoa(jsonString);
-            
-            // URL de la app principal
-            const targetUrl = `http://127.0.0.1:5500/index.html?userData=${encodeURIComponent(base64String)}`;
-            
-            console.log("Redirigiendo a:", targetUrl);
-            console.log("Datos enviados (decodificados):", userData);
-            
-            window.location.href = targetUrl;
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'rotateX(0deg) rotateY(0deg)';
         });
     </script>
 </body>
 </html>
-

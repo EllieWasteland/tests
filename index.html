@@ -357,6 +357,11 @@
         <div class="controls-container" id="wizard-container">
             <!-- El contenido del asistente se inyectará aquí -->
         </div>
+        
+        <!-- Contenedor del botón para activar movimiento -->
+        <div id="motion-control-container" style="display: none; text-align: center; margin-top: 15px;">
+            <button id="enable-motion-btn" class="wizard-btn">Habilitar Vista 3D</button>
+        </div>
     </div>
 
     <script>
@@ -371,7 +376,63 @@
             const wizardContainer = document.getElementById('wizard-container');
             const canvas = document.getElementById('particle-canvas');
             const ctx = canvas.getContext('2d');
+            const ticketScene = document.getElementById('ticket-scene');
+            const motionControlContainer = document.getElementById('motion-control-container');
+            const enableMotionBtn = document.getElementById('enable-motion-btn');
             let animationFrameId;
+            let motionControlActive = false;
+
+
+            // --- Lógica para control de movimiento (Giroscopio) ---
+            function handleOrientation(event) {
+                if (!motionControlActive) return;
+
+                const beta = event.beta;  // Inclinación adelante-atrás (-180 a 180)
+                const gamma = event.gamma; // Inclinación izquierda-derecha (-90 a 90)
+                
+                // Suavizar y limitar el movimiento para una mejor experiencia
+                const maxRotate = 15; // Grados máximos de rotación
+                let rotateX = (beta / 90) * maxRotate;
+                let rotateY = (-gamma / 90) * maxRotate; // Invertir gamma para un mapeo más natural
+
+                // Limitar los valores para que no gire de forma descontrolada
+                rotateX = Math.max(-maxRotate, Math.min(maxRotate, rotateX));
+                rotateY = Math.max(-maxRotate, Math.min(maxRotate, rotateY));
+                
+                // Usar requestAnimationFrame para un renderizado más fluido
+                requestAnimationFrame(() => {
+                    ticketFlipper.style.transition = 'transform 0.1s linear';
+                    ticketFlipper.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                });
+            }
+
+            function requestMotionPermission() {
+                // Para iOS 13+ es necesario solicitar permiso explícitamente
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    DeviceOrientationEvent.requestPermission()
+                        .then(permissionState => {
+                            if (permissionState === 'granted') {
+                                window.addEventListener('deviceorientation', handleOrientation, true);
+                                motionControlActive = true;
+                                motionControlContainer.style.display = 'none'; // Ocultar el botón una vez activado
+                            } else {
+                                alert('Permiso de movimiento denegado. La función 3D no estará disponible.');
+                            }
+                        })
+                        .catch(console.error);
+                } else if ('DeviceOrientationEvent' in window) {
+                    // Para otros dispositivos (como Android) que no necesitan permiso explícito
+                    window.addEventListener('deviceorientation', handleOrientation, true);
+                    motionControlActive = true;
+                    motionControlContainer.style.display = 'none'; // Ocultar el botón una vez activado
+                } else {
+                    alert('Tu dispositivo no es compatible con el control de movimiento.');
+                }
+            }
+            
+            // Asignar el evento al botón
+            enableMotionBtn.addEventListener('click', requestMotionPermission);
+
 
             // --- Lógica de la Splash Screen ---
             function initAndRunSplash() {
@@ -389,7 +450,6 @@
                         animationFrameId = requestAnimationFrame(animateSplash);
                     } else {
                         splashScreen.classList.add('hidden');
-                        // En lugar de mostrar la app, muestra la modal de login
                         loginModal.classList.add('visible');
                     }
                 }
@@ -420,7 +480,6 @@
 
             // --- Funciones del Asistente ---
             const steps = [
-                // El paso 0 se elimina, ya que ahora lo maneja la modal
                 {
                     title: "Confirma tus Nombres y Apellidos",
                     render: () => `
@@ -589,9 +648,13 @@
                         return;
                     }
                     
-                    // Ocultar modal y mostrar la app
                     loginModal.classList.remove('visible');
                     mainAppContainer.classList.add('visible');
+
+                    // Mostrar el botón de control por movimiento si el dispositivo es compatible
+                    if ('DeviceOrientationEvent' in window) {
+                        motionControlContainer.style.display = 'block';
+                    }
 
                     const nameParts = user.displayName.split(' ');
                     userData.lastName = nameParts.pop() || '';
@@ -601,20 +664,18 @@
                     userData.photoURL = user.photoURL;
                     document.getElementById('ticket-photo').src = user.photoURL || 'https://i.pinimg.com/736x/69/38/e4/6938e42485cf0eaf14ac0e9848fd0e0f.jpg';
                     
-                    // Iniciar el asistente desde el primer paso
                     currentStep = 0;
                     renderWizardStep();
                     
                 } else {
-                    // Si no hay usuario, asegurarse de que la modal de login esté visible
                     mainAppContainer.classList.remove('visible');
                     loginModal.classList.add('visible');
                 }
             });
 
-            // --- Efectos visuales del Ticket ---
-            const ticketScene = document.getElementById('ticket-scene');
+            // --- Efectos visuales del Ticket (Escritorio) ---
             ticketScene.addEventListener('mousemove', (e) => {
+                if (motionControlActive) return; // Si el giroscopio está activo, ignorar el ratón
                 const rect = ticketScene.getBoundingClientRect();
                 const x = e.clientX - rect.left, y = e.clientY - rect.top;
                 const centerX = rect.width / 2, centerY = rect.height / 2;
@@ -622,10 +683,12 @@
                 ticketFlipper.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
             });
             ticketScene.addEventListener('mouseleave', () => {
+                if (motionControlActive) return; // No resetear si el giroscopio está activo
                 ticketFlipper.style.transition = 'transform 0.5s ease-in-out';
                 ticketFlipper.style.transform = ``;
             });
             ticketScene.addEventListener('mouseenter', () => {
+                if (motionControlActive) return; // No cambiar la transición si el giroscopio está activo
                 ticketFlipper.style.transition = 'transform 0.1s ease';
             });
             

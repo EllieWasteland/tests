@@ -303,7 +303,7 @@
             <p class="info-description">
                 Tu tarjeta de acceso ahora es compatible con el movimiento. ¡Intenta mover tu dispositivo para ver la magia!
             </p>
-            <button id="motion-info-ok-btn" class="wizard-btn">OK</button>
+            <button id="motion-info-ok-btn" class="wizard-btn">Entendido</button>
         </div>
     </div>
 
@@ -371,10 +371,6 @@
             <!-- El contenido del asistente se inyectará aquí -->
         </div>
         
-        <!-- Contenedor del botón para activar movimiento -->
-        <div id="motion-control-container" style="display: none; text-align: center; margin-top: 15px;">
-            <button id="enable-motion-btn" class="wizard-btn">Habilitar Vista 3D</button>
-        </div>
     </div>
 
     <script>
@@ -390,8 +386,6 @@
             const canvas = document.getElementById('particle-canvas');
             const ctx = canvas.getContext('2d');
             const ticketScene = document.getElementById('ticket-scene');
-            const motionControlContainer = document.getElementById('motion-control-container');
-            const enableMotionBtn = document.getElementById('enable-motion-btn');
             const motionInfoModal = document.getElementById('motion-info-modal');
             const motionInfoOkBtn = document.getElementById('motion-info-ok-btn');
             let animationFrameId;
@@ -402,11 +396,10 @@
             function handleOrientation(event) {
                 if (!motionControlActive) return;
 
-                const beta = event.beta;  // Inclinación adelante-atrás (-180 a 180)
-                const gamma = event.gamma; // Inclinación izquierda-derecha (-90 a 90)
+                const beta = event.beta;
+                const gamma = event.gamma;
                 
-                // Efecto de movimiento exagerado
-                const maxRotate = 30; // Grados máximos de rotación
+                const maxRotate = 30; 
                 let rotateX = (beta / 90) * maxRotate;
                 let rotateY = (-gamma / 90) * maxRotate;
 
@@ -426,25 +419,19 @@
                             if (permissionState === 'granted') {
                                 window.addEventListener('deviceorientation', handleOrientation, true);
                                 motionControlActive = true;
-                                motionInfoModal.classList.add('visible'); // Mostrar pop-up
-                            } else {
-                                alert('Permiso de movimiento denegado. La función 3D no estará disponible.');
+                                motionInfoModal.classList.add('visible'); 
                             }
                         })
                         .catch(console.error);
                 } else if ('DeviceOrientationEvent' in window) {
                     window.addEventListener('deviceorientation', handleOrientation, true);
                     motionControlActive = true;
-                    motionInfoModal.classList.add('visible'); // Mostrar pop-up
-                } else {
-                    alert('Tu dispositivo no es compatible con el control de movimiento.');
+                    motionInfoModal.classList.add('visible');
                 }
             }
             
-            enableMotionBtn.addEventListener('click', requestMotionPermission);
             motionInfoOkBtn.addEventListener('click', () => {
                 motionInfoModal.classList.remove('visible');
-                motionControlContainer.style.display = 'none';
             });
 
 
@@ -635,21 +622,24 @@
             function finalizeConfiguration() {
                 if (ticketFlipper.classList.contains('is-spinning')) return;
 
-                // Limpiar almacenamiento local y de sesión para prevenir bugs
-                localStorage.clear();
-                sessionStorage.clear();
-                console.log("LocalStorage y SessionStorage han sido limpiados.");
-
                 ticketFlipper.classList.add('is-spinning');
+                
                 ticketFlipper.addEventListener('animationend', () => {
                     const finalJson = JSON.stringify(userData);
                     const base64String = btoa(finalJson);
                     const targetUrl = `http://127.0.0.1:5500/index.html?userData=${encodeURIComponent(base64String)}`;
-                    console.log("Redirigiendo a:", targetUrl);
                     
-                    // Usar replace para no guardar la página de configuración en el historial
-                    // y forzar una recarga limpia.
-                    window.location.replace(targetUrl);
+                    window.open(targetUrl, '_blank');
+                    
+                    auth.signOut().then(() => {
+                        console.log("Sesión de Firebase cerrada.");
+                        localStorage.clear();
+                        sessionStorage.clear();
+                        console.log("LocalStorage y SessionStorage han sido limpiados.");
+                        
+                        setTimeout(() => window.location.reload(), 500);
+                    });
+
                 }, { once: true });
             }
 
@@ -674,7 +664,7 @@
                     mainAppContainer.classList.add('visible');
 
                     if ('DeviceOrientationEvent' in window) {
-                        motionControlContainer.style.display = 'block';
+                        requestMotionPermission();
                     }
 
                     const nameParts = user.displayName.split(' ');
@@ -683,7 +673,6 @@
                     userData.email = user.email;
                     userData.uid = user.uid;
                     userData.photoURL = user.photoURL;
-                    document.getElementById('ticket-photo').src = user.photoURL || 'https://i.pinimg.com/736x/69/38/e4/6938e42485cf0eaf14ac0e9848fd0e0f.jpg';
                     
                     currentStep = 0;
                     renderWizardStep();

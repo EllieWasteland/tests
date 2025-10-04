@@ -3,387 +3,655 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Tickets | Vitrum Space</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <!-- Firebase SDKs (versión modular v9+) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1W2yLlVHivzBQPZJVOgpApQeYnJUFzCs",
-            authDomain: "vitreumucuencahub.firebaseapp.com",
-            projectId: "vitreumucuencahub",
-            storageBucket: "vitreumucuencahub.firebasestorage.app",
-            messagingSenderId: "628136581064",
-            appId: "1:6281365-4602fd2fd"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
-
-        const loadingView = document.getElementById('loading-view');
-        const loginView = document.getElementById('login-view');
-        const appView = document.getElementById('app-view');
-        const loginBtn = document.getElementById('google-login-btn');
-        const formSteps = document.querySelectorAll('.form-step');
-        const nextButtons = document.querySelectorAll('.next-btn');
-        const backButtons = document.querySelectorAll('.back-btn');
-        const submitButton = document.getElementById('submit-btn');
-
-        let currentStep = 0;
-        let userData = {};
-
-        onAuthStateChanged(auth, user => {
-            loadingView.classList.add('hidden');
-            if (user) {
-                if (!user.email.endsWith('@ucuenca.edu.ec')) {
-                    showModal('Acceso denegado', 'Debes usar una cuenta de correo institucional (@ucuenca.edu.ec).');
-                    signOut(auth);
-                    return;
-                }
-                loginView.classList.add('hidden');
-                appView.classList.remove('hidden');
-                initializeForm(user);
-            } else {
-                appView.classList.add('hidden');
-                loginView.classList.remove('hidden');
-            }
-        });
-
-        loginBtn.addEventListener('click', () => {
-            signInWithPopup(auth, provider).catch(error => {
-                console.error("Error de autenticación:", error);
-                showModal("Error de autenticación", error.message);
-            });
-        });
-
-        function showStep(stepIndex) {
-            formSteps.forEach((step, index) => {
-                step.classList.toggle('hidden', index !== stepIndex);
-            });
-        }
-        
-        nextButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const currentInputs = formSteps[currentStep].querySelectorAll('input[required], select[required]');
-                let isValid = true;
-                currentInputs.forEach(input => {
-                    if (!input.value) {
-                        input.classList.add('border-red-500');
-                        isValid = false;
-                    } else {
-                        input.classList.remove('border-red-500');
-                    }
-                });
-
-                if (isValid && currentStep < formSteps.length - 1) {
-                    currentStep++;
-                    showStep(currentStep);
-                } else if (!isValid) {
-                     showModal('Campos requeridos', 'Por favor, completa todos los campos obligatorios para continuar.');
-                }
-            });
-        });
-
-        backButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                if (currentStep > 0) {
-                    currentStep--;
-                    showStep(currentStep);
-                }
-            });
-        });
-
-        function initializeForm(user) {
-            const nameParts = user.displayName.split(' ');
-            const lastName = nameParts.pop() || '';
-            const firstName = nameParts.join(' ');
-
-            document.getElementById('firstName').value = firstName;
-            document.getElementById('lastName').value = lastName;
-            document.getElementById('email').value = user.email;
-
-            userData = {
-                uid: user.uid,
-                email: user.email,
-                photoURL: user.photoURL,
-                zone: String(Math.floor(Math.random() * 99) + 1).padStart(2, '0'),
-                row: String(Math.floor(Math.random() * 20) + 1).padStart(2, '0'),
-                seat: String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0'),
-                ticketNumber: `no.${Math.floor(Math.random() * 9000000) + 1000000}`,
-            };
-
-            updateTicketPreview();
-            generateBarcode();
-            showStep(0);
-            attachInputListeners();
-        }
-
-        function updateTicketPreview() {
-            userData.firstName = document.getElementById('firstName').value;
-            userData.lastName = document.getElementById('lastName').value;
-            userData.nickname = document.getElementById('nickname').value;
-            userData.major = document.getElementById('major').value;
-            userData.cycle = document.getElementById('cycle').value;
-            userData.modality = document.getElementById('modality').value;
-            
-            document.getElementById('ticket-username').textContent = userData.nickname || `${userData.firstName.split(' ')[0]} ${userData.lastName.split(' ')[0]}`;
-            document.getElementById('ticket-photo').src = userData.photoURL || `https://ui-avatars.com/api/?name=${userData.firstName}+${userData.lastName}&background=EAB308&color=fff`;
-            document.getElementById('ticket-zone').textContent = userData.zone;
-            document.getElementById('ticket-row').textContent = userData.row;
-            document.getElementById('ticket-seat').textContent = userData.seat;
-            document.getElementById('ticket-number').textContent = userData.ticketNumber;
-        }
-
-        function generateBarcode() {
-            const barcodeContainer = document.getElementById('ticket-barcode');
-            barcodeContainer.innerHTML = '';
-            for (let i = 0; i < 60; i++) {
-                const bar = document.createElement('div');
-                bar.style.width = (Math.random() > 0.5 ? '2px' : '1.5px');
-                bar.style.height = '100%';
-                bar.style.backgroundColor = '#44403c';
-                barcodeContainer.appendChild(bar);
-            }
-        }
-        
-        function attachInputListeners() {
-            document.querySelectorAll('input, select').forEach(element => {
-                element.addEventListener('input', updateTicketPreview);
-            });
-        }
-        
-        submitButton.addEventListener('click', () => {
-            updateTicketPreview();
-            
-            const finalUserData = {
-                 ...userData,
-                 displayName: `${userData.firstName} ${userData.lastName}`,
-                 isContinuous: document.getElementById('isContinuous').checked,
-                 useAI: document.getElementById('useAI').checked
-            };
-
-            const jsonString = JSON.stringify(finalUserData);
-            const base64String = btoa(jsonString);
-            const targetUrl = `http://127.0.0.1:5500/index.html?userData=${encodeURIComponent(base64String)}`;
-            
-            showModal('¡Configuración Completa!', `Serás redirigido a la aplicación principal.`, () => {
-                 window.location.href = targetUrl;
-            });
-        });
-
-        function showModal(title, message, onConfirm) {
-            const modal = document.getElementById('modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalMessage = document.getElementById('modal-message');
-            const modalConfirm = document.getElementById('modal-confirm-btn');
-
-            modalTitle.textContent = title;
-            modalMessage.textContent = message;
-            
-            const newConfirmBtn = modalConfirm.cloneNode(true);
-            modalConfirm.parentNode.replaceChild(newConfirmBtn, modalConfirm);
-
-            const closeAction = () => {
-                modal.classList.add('hidden');
-                if (onConfirm) onConfirm();
-            };
-
-            newConfirmBtn.addEventListener('click', closeAction);
-            modal.classList.remove('hidden');
-        }
-    </script>
+    <title>Configuración de Cuenta | Vitrum Spaces</title>
+    
+    <!-- SDKs de Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+        }
+
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #F3EADF;
-        }
-        .font-mono { font-family: 'Roboto Mono', monospace; }
-        .font-display { font-family: 'Poppins', sans-serif; }
-        .hard-shadow { box-shadow: 8px 8px 0px #000; }
-        .input-field {
-            background-color: #FFF;
-            border: 3px solid #000;
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-        }
-        .input-field:focus {
-            box-shadow: 4px 4px 0px #000;
-            transform: translate(-2px, -2px);
-        }
-        .btn-primary {
-            background-color: #F59E0B; /* amber-500 */
-            border: 3px solid #000;
-            font-weight: 700;
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-        }
-        .btn-primary:hover {
-            box-shadow: 4px 4px 0px #000;
-            transform: translate(-4px, -4px);
-        }
-        .btn-secondary {
-            background-color: #D6D3D1; /* stone-300 */
-            border: 3px solid #000;
-            font-weight: 700;
-            border-radius: 0.5rem;
-             transition: all 0.2s;
-        }
-        .btn-secondary:hover {
-            box-shadow: 4px 4px 0px #000;
-            transform: translate(-4px, -4px);
-        }
-        /* Memphis BG Shapes */
-        .memphis-bg {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            background: #0f0c1b;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 25px 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            font-family: 'Space Grotesk', sans-serif;
             overflow: hidden;
-            z-index: -1;
+        }
+
+        /* --- Estilos de la Splash Screen --- */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #0f0c1b; z-index: 9999; display: flex;
+            justify-content: center; align-items: center;
+            transition: opacity 1.5s cubic-bezier(0.77, 0, 0.175, 1); opacity: 1;
+        }
+        #splash-screen.hidden { opacity: 0; pointer-events: none; }
+        #particle-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* --- Estilos de la Ventana Modal de Login --- */
+        #login-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(15, 12, 27, 0.5);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            z-index: 10000; display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.5s ease-in-out;
+        }
+        #login-modal.visible { opacity: 1; pointer-events: auto; }
+
+        .login-content {
+            background: rgba(42, 42, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            transform: scale(0.95);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #login-modal.visible .login-content { transform: scale(1); }
+
+        .login-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 42px;
+            color: #ffb3d9;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .login-description {
+            color: #e0e0e0;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        /* Contenedor para la app principal */
+        .main-app-container {
+            width: 100%; height: 100%; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; opacity: 0;
+            transition: opacity 1s ease-in-out;
+            pointer-events: none;
+        }
+        .main-app-container.visible { opacity: 1; pointer-events: auto; }
+        
+        .ticket-scene {
+            width: 900px; height: 400px; perspective: 2000px;
+            max-width: 100%; position: relative; transform-style: preserve-3d; z-index: 10;
+        }
+
+        .ticket-flipper {
+            width: 100%; height: 100%; position: relative;
+            transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+        .ticket-flipper.is-flipped { transform: rotateY(180deg); }
+        
+        .ticket-front, .ticket-back {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden; border-radius: 20px; overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            transform-style: preserve-3d;
+        }
+        
+        @keyframes holographicShine {
+            0% { background-position: 150% 50%; } 100% { background-position: -50% 50%; }
+        }
+
+        .ticket-front::after {
+            content: ''; position: absolute; top: -10%; left: -50%;
+            width: 200%; height: 120%;
+            background: linear-gradient(110deg, transparent 30%, hsla(180, 85%, 60%, 0.25) 48%, hsla(260, 85%, 65%, 0.25) 52%, transparent 70%);
+            background-size: 200% 100%; animation: holographicShine 7s infinite linear;
+            mix-blend-mode: screen; pointer-events: none; z-index: 10;
+        }
+
+        .ticket-front { display: flex; z-index: 2; transform: rotateY(0deg); background: rgba(42, 42, 42, 0.65); }
+        .ticket-back { background-color: rgba(26, 26, 26, 0.65); display: flex; align-items: center; justify-content: center; transform: rotateY(180deg); }
+        .ticket-back img { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; opacity: 0.8; }
+        
+        .ticket-left, .ticket-center, .ticket-right { transform-style: preserve-3d; }
+        .logo { transform: translateZ(50px); } .vertical-text { transform: translateZ(25px); } .barcode-section { transform: translateZ(35px); } .event-date { transform: translateZ(20px); } .artist-name { transform: translateZ(30px); } .title-stack { transform: translateZ(60px); } .event-label { transform: translateZ(40px); } .event-details { transform: translateZ(30px); } .icons-section { transform: translateZ(20px); } .artist-photo { transform: translateZ(20px); }
+        
+        .ticket-left {
+            width: 280px; background: linear-gradient(135deg, rgba(255, 179, 217, 0.8) 0%, rgba(255, 197, 224, 0.8) 100%);
+            padding: 30px 20px; display: flex; flex-direction: column; align-items: center; position: relative;
+        }
+        .logo { font-size: 72px; font-weight: 900; color: #1a1a1a; line-height: 0.8; margin-bottom: 10px; font-family: 'Bebas Neue', sans-serif; position: relative; text-align: center; }
+        .logo-number { font-size: 48px; }
+        .sparkle { position: absolute; color: #1a1a1a; font-size: 20px; }
+        .sparkle-1 { top: -5px; right: -15px; } .sparkle-2 { bottom: 10px; left: -15px; }
+        .vertical-text { writing-mode: vertical-rl; text-orientation: mixed; font-size: 11px; font-weight: 700; color: #1a1a1a; letter-spacing: 1px; margin: 20px 0; text-transform: uppercase; }
+        .barcode-section { margin-top: auto; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .barcode-label { font-size: 10px; font-weight: 700; color: #1a1a1a; letter-spacing: 2px; }
+        .barcode { width: 180px; height: 60px; background: repeating-linear-gradient(90deg, #1a1a1a 0px, #1a1a1a 2px, transparent 2px, transparent 4px, #1a1a1a 4px, #1a1a1a 5px, transparent 5px, transparent 8px, #1a1a1a 8px, #1a1a1a 10px, transparent 10px, transparent 11px, #1a1a1a 11px, #1a1a1a 14px, transparent 14px, transparent 16px); border: 2px solid #1a1a1a; }
+        .barcode-number { font-size: 11px; font-weight: 700; color: #1a1a1a; letter-spacing: 2px; margin-top: 5px; }
+        
+        .ticket-center { flex: 1; padding: 35px 30px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .event-date, .artist-name, .title-stack, .event-label, .event-details { position: relative; z-index: 2; }
+        .event-date { display: inline-block; font-size: 11px; font-weight: 700; color: #ffb3d9; letter-spacing: 3px; margin-bottom: 5px; }
+        .artist-name { display: inline-block; font-size: 12px; font-weight: 700; color: #ffffff; letter-spacing: 2px; margin-bottom: 15px; }
+        .title-stack { display: inline-block; margin-bottom: 25px; }
+        .title { font-family: 'Bebas Neue', sans-serif; font-size: 48px; font-weight: 700; line-height: 0.9; letter-spacing: 3px; margin-bottom: 2px; }
+        .title-1 { color: #ffb3d9; -webkit-text-stroke: 2px #ffb3d9; -webkit-text-fill-color: transparent; }
+        .title-2 { color: #ffb3d9; }
+        .title-3 { color: #ffb3d9; -webkit-text-stroke: 2px #ffb3d9; -webkit-text-fill-color: transparent; }
+        .event-label { display: inline-block; font-size: 10px; font-weight: 700; color: #ffb3d9; letter-spacing: 2px; margin-bottom: 8px; }
+        .event-details { display: inline-block; font-size: 13px; font-weight: 700; color: #ffffff; line-height: 1.6; letter-spacing: 1px; margin-bottom: 20px; }
+        .icons-section { display: flex; gap: 15px; align-items: center; margin-top: auto; z-index: 2; position: relative; }
+        .icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .globe-icon { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(90deg, transparent 48%, #ffb3d9 48%, #ffb3d9 52%, transparent 52%), linear-gradient(0deg, transparent 48%, #ffb3d9 48%, #ffb3d9 52%, transparent 52%); border: 2px solid #ffb3d9; position: relative; }
+        .globe-icon::before { content: ''; position: absolute; width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at center, transparent 40%, #ffb3d9 40%, #ffb3d9 42%, transparent 42%); }
+        .save-icon { width: 24px; height: 28px; background: #ffb3d9; border-radius: 2px; position: relative; }
+        .save-icon::after { content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 8px solid #ffb3d9; }
+        .rss-icon { width: 28px; height: 28px; position: relative; }
+        .rss-icon::before { content: ''; position: absolute; bottom: 2px; left: 2px; width: 6px; height: 6px; background: #ffb3d9; border-radius: 50%; }
+        .rss-icon::after { content: ''; position: absolute; bottom: 2px; left: 2px; width: 22px; height: 22px; border: 3px solid #ffb3d9; border-radius: 0 100% 0 0; border-left: none; border-bottom: none; }
+        .progress-bar { width: 200px; height: 3px; background: #3a3a3a; border-radius: 2px; overflow: hidden; margin-left: auto; }
+        .progress-fill { width: 60%; height: 100%; background: #ffb3d9; }
+        .side-globes { position: absolute; right: 20px; top: 50%; transform: translateY(-50%) translateZ(20px); display: flex; flex-direction: column; gap: 20px; }
+        .side-globe { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(90deg, transparent 47%, #ffb3d9 47%, #ffb3d9 53%, transparent 53%), linear-gradient(0deg, transparent 47%, #ffb3d9 47%, #ffb3d9 53%, transparent 53%); border: 2px solid #ffb3d9; }
+        .oval-shape { position: absolute; right: 80px; top: 35%; width: 80px; height: 35px; border: 2px solid #ffb3d9; border-radius: 50%; transform: rotate(-15deg) translateZ(30px); }
+        .deco-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(255, 179, 217, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 179, 217, 0.07) 1px, transparent 1px); background-size: 25px 25px; z-index: 0; transform: translateZ(-10px); animation: pan-grid 25s linear infinite; }
+        @keyframes pan-grid { 0% { background-position: 0 0; } 100% { background-position: 50px 50px; } }
+        .corner-bracket { position: absolute; width: 20px; height: 20px; border-color: rgba(255, 179, 217, 0.5); border-style: solid; z-index: 1; animation: pulse-brackets 3.5s infinite ease-in-out; }
+        .corner-bracket.top-left { top: 15px; left: 15px; border-width: 2px 0 0 2px; } .corner-bracket.top-right { top: 15px; right: 15px; border-width: 2px 2px 0 0; } .corner-bracket.bottom-left { bottom: 15px; left: 15px; border-width: 0 0 2px 2px; } .corner-bracket.bottom-right { bottom: 15px; right: 15px; border-width: 0 2px 2px 0; }
+        @keyframes pulse-brackets { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+        
+        .ticket-right { width: 240px; background: #0a0a0a; position: relative; overflow: hidden; }
+        .artist-photo { width: 100%; height: 100%; object-fit: cover; filter: contrast(1.1) brightness(0.9); opacity: 0.8; }
+        
+        /* --- Estilos del Asistente (Wizard) --- */
+        .controls-container {
+            width: 900px; max-width: 100%; margin-top: 30px; padding: 25px;
+            border-radius: 20px; background: rgba(42, 42, 42, 0.55);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15); z-index: 5;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            text-align: center;
+        }
+        .wizard-step { animation: fadeInStep 0.7s ease-out; }
+        @keyframes fadeInStep { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .wizard-title {
+            font-size: 18px; font-weight: 700; color: #ffb3d9;
+            letter-spacing: 2px; margin-bottom: 20px; text-transform: uppercase;
+        }
+        .wizard-input, .wizard-select {
+            width: 100%; max-width: 400px; padding: 12px 20px;
+            font-family: 'Space Grotesk', sans-serif; font-size: 16px; color: #fff;
+            background-color: rgba(15, 12, 27, 0.7); border: 2px solid #ffb3d9;
+            border-radius: 10px; margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .wizard-input:focus, .wizard-select:focus {
+            outline: none; box-shadow: 0 0 15px rgba(255, 179, 217, 0.5);
+        }
+        .wizard-btn, .google-login-btn {
+            padding: 12px 25px; font-family: 'Space Grotesk', sans-serif; font-size: 14px;
+            font-weight: 700; color: #0f0c1b; background-color: #ffb3d9;
+            border: 2px solid #ffb3d9; border-radius: 10px; cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 179, 217, 0.3);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .wizard-btn:hover, .google-login-btn:hover {
+            background-color: transparent; color: #ffb3d9;
+            box-shadow: 0 5px 20px rgba(255, 179, 217, 0.4); transform: translateY(-2px);
+        }
+        .wizard-options { display: flex; justify-content: center; gap: 20px; }
+
+        /* --- Animación de actualización de texto --- */
+        .text-to-refresh { position: relative; z-index: 1; display: inline-block; }
+        .text-to-refresh::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #ffb3d9; z-index: 2; transform: scaleX(0);
+        }
+        .refresh-cover.text-to-refresh::before { animation: cover 0.4s cubic-bezier(0.86, 0, 0.07, 1) forwards; }
+        .refresh-reveal.text-to-refresh::before { animation: reveal 0.4s cubic-bezier(0.86, 0, 0.07, 1) 0.1s forwards; }
+        @keyframes cover { from { transform: scaleX(0); transform-origin: left; } to { transform: scaleX(1); transform-origin: left; } }
+        @keyframes reveal { from { transform: scaleX(1); transform-origin: right; } to { transform: scaleX(0); transform-origin: right; } }
+        
+        /* --- Animación de giro --- */
+        @keyframes spin-four-times { 100% { transform: rotateY(1440deg); } }
+        .is-spinning { animation: spin-four-times 2s cubic-bezier(0.77, 0, 0.175, 1); }
+
+        /* --- Estrellas de fondo --- */
+        .star-bg { position: absolute; background: #fff; border-radius: 50%; animation: twinkle 5s infinite; }
+        .star-bg { box-shadow: 0 0 6px #fff, 0 0 10px #fff; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.5; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
+
+        /* --- Media Queries para Responsividad --- */
+        @media (max-width: 950px) {
+            body { padding: 15px; }
+            .main-app-container { height: 100vh; overflow: hidden; }
+            .ticket-scene { width: 100%; flex: 1 1 auto; min-height: 0; height: auto; margin: 0; }
+            .ticket-flipper, .ticket-back { height: 100%; }
+            .ticket-back { position: absolute; top: 0; left: 0; width: 100%; }
+            .ticket-front { flex-direction: column; height: 100%; width: 100%; }
+            .ticket-left { width: 100%; padding: 15px; flex-direction: row; justify-content: space-around; align-items: center; height: auto; }
+            .vertical-text { writing-mode: horizontal-tb; font-size: 2.5vw; margin: 0 10px; text-align: center; }
+            .ticket-center { width: 100%; padding: 20px 15px; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+            .ticket-right { width: 100%; height: 150px; flex-shrink: 0; display: block; }
+            .logo { font-size: 10vw; line-height: 1; margin: 0; }
+            .logo-number { font-size: 7vw; }
+            .sparkle { font-size: 3.5vw; }
+            .barcode-section { gap: 1vw; margin-top: 0; }
+            .barcode-label { font-size: 2vw; }
+            .barcode { width: 30vw; height: 8vw; }
+            .barcode-number { font-size: 2.2vw; margin-top: 0.5vw; }
+            .event-date { font-size: 3.2vw; letter-spacing: 0.3vw; margin-bottom: 1.5vh;}
+            .artist-name { font-size: 3.5vw; margin-bottom: 2vh;}
+            .title-stack { margin-bottom: 3vh; }
+            .title { font-size: 9.5vw; }
+            .event-label { font-size: 3vw; }
+            .event-details { font-size: 3.8vw; line-height: 1.5; margin-bottom: 2.5vw;}
+            .icons-section { gap: 4vw; }
+            .icon { width: 6vw; height: 6vw; }
+            .globe-icon, .rss-icon { width: 5.5vw; height: 5.5vw; border-width: 0.4vw; }
+            .save-icon { width: 5vw; height: 5.5vw; }
+            .progress-bar, .side-globes, .oval-shape { display: none; }
+            .corner-bracket.top-left { top: 10px; left: 10px; } .corner-bracket.top-right { top: 10px; right: 10px; } .corner-bracket.bottom-left { bottom: 10px; left: 10px; } .corner-bracket.bottom-right { bottom: 10px; right: 10px; }
+            .controls-container { position: relative; width: 100%; margin-top: 15px; border-radius: 20px; padding: 15px; flex-shrink: 0; }
         }
     </style>
 </head>
-<body class="text-stone-800">
+<body>
 
-    <!-- Memphis Background -->
-    <div class="memphis-bg">
-        <svg width="100" height="100" class="absolute top-1/4 left-1/4 opacity-30 text-orange-400 -translate-x-1/2 -translate-y-1/2"><circle cx="50" cy="50" r="50" fill="currentColor"/></svg>
-        <svg width="80" height="80" class="absolute bottom-10 right-10 opacity-40 text-red-500"><path d="M 0 80 L 40 0 L 80 80 Z" fill="currentColor" /></svg>
-        <svg width="120" height="120" class="absolute top-10 left-20 opacity-50 text-amber-400" viewBox="0 0 100 100"><path d="M 10 10 C 20 80, 80 20, 90 90" stroke="currentColor" stroke-width="8" fill="none" /></svg>
+    <div id="splash-screen">
+        <canvas id="particle-canvas"></canvas>
     </div>
 
-    <!-- Loader -->
-    <div id="loading-view" class="fixed inset-0 flex flex-col items-center justify-center bg-[#F3EADF] z-50">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-stone-800"></div>
-        <p class="mt-4 text-lg font-semibold">Cargando...</p>
+    <div id="login-modal">
+        <div class="login-content">
+            <div class="login-title">Vitrum Spaces</div>
+            <p class="login-description">
+                Bienvenido a tu espacio digital. Inicia sesión con tu cuenta institucional para personalizar tu experiencia y configurar tu pase de acceso.
+            </p>
+            <button id="google-login-btn" class="google-login-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" style="margin-right: 10px; vertical-align: middle;"><path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.19,4.73C14.03,4.73 15.6,5.36 16.81,6.45L18.87,4.59C17.01,3.01 14.7,2 12.19,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.19,22C17.6,22 21.54,18.33 21.54,12.29C21.54,11.77 21.48,11.44 21.35,11.1Z"/></svg>
+                Iniciar Sesión con Google
+            </button>
+        </div>
     </div>
 
-    <!-- Login -->
-    <div id="login-view" class="hidden min-h-screen flex items-center justify-center p-4">
-         <div class="text-center bg-white p-10 border-4 border-black hard-shadow max-w-md w-full">
-             <h1 class="text-4xl font-black mb-2">Generador de Tickets</h1>
-             <p class="text-stone-600 mb-8">Usa tu cuenta institucional para crear tu pase de acceso.</p>
-             <button id="google-login-btn" class="btn-primary inline-flex items-center justify-center gap-3 py-3 px-6 text-lg w-full">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.19,4.73C14.03,4.73 15.6,5.36 16.81,6.45L18.87,4.59C17.01,3.01 14.7,2 12.19,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.19,22C17.6,22 21.54,18.33 21.54,12.29C21.54,11.77 21.48,11.44 21.35,11.1Z"/></svg>
-                 <span>Iniciar Sesión con Google</span>
-             </button>
-         </div>
-    </div>
-
-    <!-- App principal -->
-    <main id="app-view" class="hidden w-full max-w-5xl mx-auto flex flex-col items-center p-4 md:p-8 space-y-8">
+    <div class="main-app-container">
+        <div class="ticket-scene" id="ticket-scene">
+            <div class="ticket-flipper" id="ticket-flipper">
+                <div class="ticket-front">
+                    <div class="ticket-left">
+                        <div class="logo">
+                            <span class="sparkle sparkle-1">✦</span>
+                            <div>UC</div>
+                            <div class="logo-number">25</div>
+                            <span class="sparkle sparkle-2">✦</span>
+                        </div>
+                        <div id="ticket-major" class="vertical-text">CARRERA: ##########</div>
+                        <div class="barcode-section">
+                            <div class="barcode-label">GVNR300860</div>
+                            <div class="barcode"></div>
+                            <div class="barcode-number">GVNR300860-20</div>
+                        </div>
+                    </div>
+                    <div class="ticket-center">
+                        <div class="deco-grid"></div>
+                        <div class="corner-bracket top-left"></div>
+                        <div class="corner-bracket top-right"></div>
+                        <div class="corner-bracket bottom-left"></div>
+                        <div class="corner-bracket bottom-right"></div>
+                        <div class="event-date">VERSION: BETAV1R25</div>
+                        <div class="artist-name">TECNOLOGIA QUE TE MERECES</div>
+                        <div class="title-stack">
+                            <div class="title title-1">Vitrum_UX</div>
+                            <div class="title title-2">VitrumStudios</div>
+                            <div class="title title-3">Vitrum.Spaces</div>
+                        </div>
+                        <div class="event-label">— ACCESO VIP —</div>
+                        <div class="event-details">
+                            <span id="ticket-displayName">##################</span><br>
+                            <span id="ticket-cycle-modality">CICLO #, MODALIDAD: #########</span>
+                        </div>
+                        <div class="icons-section">
+                            <div class="icon globe-icon"></div>
+                            <div class="icon save-icon"></div>
+                            <div class="icon rss-icon"></div>
+                            <div class="icon">
+                                <svg viewBox="0 0 32 32" style="width: 100%; height: 100%;"><path d="M16 28 C8 20, 0 14, 0 8 C0 0, 8 0, 16 8 C24 0, 32 0, 32 8 C32 14, 24 20, 16 28Z M16 24 C10 18, 4 13, 4 8 C4 3, 10 3, 16 8 C22 3, 28 3, 28 8 C28 13, 22 18, 16 24Z" fill="none" stroke="#ffb3d9" stroke-width="2"/></svg>
+                            </div>
+                            <div class="progress-bar"><div class="progress-fill"></div></div>
+                        </div>
+                        <div class="side-globes">
+                            <div class="side-globe"></div><div class="side-globe"></div><div class="side-globe"></div>
+                        </div>
+                        <div class="oval-shape"></div>
+                    </div>
+                    <div class="ticket-right">
+                         <img id="ticket-photo" src="https://i.pinimg.com/736x/69/38/e4/6938e42485cf0eaf14ac0e9848fd0e0f.jpg" alt="Foto del artista" class="artist-photo">
+                    </div>
+                </div>
+                <div class="ticket-back">
+                    <img src="https://i.pinimg.com/736x/83/bc/12/83bc12ebf592bb0109371d6c7136c1a0.jpg" alt="Reverso del ticket">
+                </div>
+            </div>
+        </div>
         
-        <!-- Ticket Preview -->
-        <div class="w-full max-w-2xl">
-            <div class="bg-stone-50 p-1 border-4 border-black rounded-2xl hard-shadow">
-                <div class="flex h-64">
-                    <!-- Parte izquierda del ticket -->
-                    <div class="w-[65%] p-4 flex flex-col justify-between rounded-l-xl bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1594903335019-35c483c7a845?q=80&w=1932&auto=format&fit=crop');">
-                       <div class="flex justify-between items-start">
-                           <div>
-                               <p class="font-bold text-white bg-black/50 px-2 py-1 rounded text-sm">VITRUM</p>
-                               <p class="font-bold text-white bg-black/50 px-2 py-1 rounded text-sm mt-1">SPACE</p>
-                           </div>
-                           <p class="font-bold text-black bg-amber-400 px-2 py-1 rounded text-sm transform -rotate-12">VIP</p>
-                       </div>
-                       <div class="text-white">
-                           <h3 class="text-3xl font-black tracking-tighter leading-none">THE VIRTUAL</h3>
-                           <p class="text-xs font-semibold">22-24 & 29-31 JULY 2025 IN VITRUM SPACE</p>
-                       </div>
-                    </div>
-                    <!-- Línea punteada -->
-                    <div class="w-px bg-repeat-y bg-center relative" style="background-image: linear-gradient(to bottom, #44403c 60%, transparent 40%); background-size: 1px 10px;">
-                        <div class="absolute -left-2 top-0 bg-[#F3EADF] w-4 h-4 rounded-full border-4 border-stone-50"></div>
-                        <div class="absolute -left-2 bottom-0 bg-[#F3EADF] w-4 h-4 rounded-full border-4 border-stone-50"></div>
-                    </div>
-                    <!-- Parte derecha del ticket -->
-                    <div class="w-[35%] bg-stone-50 text-stone-800 flex flex-col justify-between items-center p-2 rounded-r-xl">
-                        <div class="text-center w-full">
-                           <img id="ticket-photo" src="" alt="User Photo" class="rounded-full w-12 h-12 mx-auto mb-1 border-2 border-stone-300">
-                           <div class="grid grid-cols-3 text-[10px] font-bold text-stone-500 px-1">
-                               <span>Zone</span><span>Row</span><span>Seat Number</span>
-                           </div>
-                           <div class="grid grid-cols-3 text-lg font-mono font-bold text-stone-900 leading-tight">
-                               <span id="ticket-zone">00</span><span id="ticket-row">00</span><span id="ticket-seat">0000</span>
-                           </div>
-                           <p id="ticket-number" class="text-xs text-stone-500 font-mono mt-1">no.0000000</p>
-                        </div>
-                        <div class="text-center w-full">
-                            <p id="ticket-username" class="font-bold text-xl leading-tight">Username</p>
-                        </div>
-                        <div id="ticket-barcode" class="h-10 w-full flex items-end justify-center gap-[1px]"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Form Section -->
-        <div class="w-full max-w-2xl bg-white p-8 border-4 border-black hard-shadow">
-            <!-- Paso 1: Datos Personales -->
-            <div id="step-1" class="form-step">
-                <h2 class="text-2xl font-black mb-1">Paso 1: Datos Personales</h2>
-                <p class="text-stone-600 mb-6">Confirma tu nombre y elige un apodo.</p>
-                <div class="space-y-4">
-                    <input type="text" id="firstName" class="input-field w-full p-3" placeholder="Nombres" required>
-                    <input type="text" id="lastName" class="input-field w-full p-3" placeholder="Apellidos" required>
-                    <input type="text" id="nickname" class="input-field w-full p-3" placeholder="Apodo para el ticket (Opcional)">
-                    <input type="email" id="email" class="input-field w-full p-3 bg-stone-200 cursor-not-allowed" readonly>
-                </div>
-                <div class="mt-8 text-right">
-                    <button class="next-btn btn-primary py-2 px-8">Siguiente</button>
-                </div>
-            </div>
-            <!-- Paso 2: Datos Académicos -->
-            <div id="step-2" class="form-step hidden">
-                <h2 class="text-2xl font-black mb-1">Paso 2: Info Académica</h2>
-                <p class="text-stone-600 mb-6">Selecciona los detalles de tu carrera.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <select id="major" class="input-field w-full p-3"><option value="periodismo">Periodismo</option><option value="educacion-basica" selected>E. Básica</option></select>
-                    <select id="cycle" class="input-field w-full p-3"><option value="1" selected>Ciclo 1</option><option value="2">Ciclo 2</option></select>
-                    <div class="md:col-span-2">
-                        <select id="modality" class="input-field w-full p-3"><option value="matutino" selected>Matutina</option><option value="vespertino">Vespertina</option></select>
-                    </div>
-                </div>
-                <div class="mt-8 flex justify-between">
-                    <button class="back-btn btn-secondary py-2 px-8">Atrás</button>
-                    <button class="next-btn btn-primary py-2 px-8">Siguiente</button>
-                </div>
-            </div>
-             <!-- Paso 3: Confirmación -->
-            <div id="step-3" class="form-step hidden text-center">
-                <h2 class="text-3xl font-black mb-1">¡Casi listo!</h2>
-                <p class="text-stone-600 mb-6">Revisa tu ticket. Si todo está correcto, finaliza la configuración.</p>
-                 <div class="md:col-span-2 mt-4 space-y-3 text-left">
-                    <div class="flex items-center p-3 input-field">
-                        <input id="isContinuous" type="checkbox" checked class="h-5 w-5 rounded-sm border-2 border-stone-800 text-amber-500 focus:ring-amber-400">
-                        <label for="isContinuous" class="ml-3 block font-semibold text-stone-800">¿Estudiante continuo?</label>
-                    </div>
-                    <div class="flex items-center p-3 input-field">
-                        <input id="useAI" type="checkbox" checked class="h-5 w-5 rounded-sm border-2 border-stone-800 text-amber-500 focus:ring-amber-400">
-                        <label for="useAI" class="ml-3 block font-semibold text-stone-800">¿Autocompletar horario con IA?</label>
-                    </div>
-                </div>
-                <div class="mt-8 flex flex-col items-center gap-4">
-                    <button id="submit-btn" class="w-full btn-primary py-3 text-lg bg-green-500">Finalizar y Enviar Ticket</button>
-                    <button class="back-btn btn-secondary py-2 px-8">Atrás</button>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Modal -->
-    <div id="modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white p-8 border-4 border-black hard-shadow max-w-sm w-full text-center">
-            <h3 id="modal-title" class="text-2xl font-black text-stone-800 mb-2"></h3>
-            <p id="modal-message" class="text-stone-600 mb-6"></p>
-            <button id="modal-confirm-btn" class="btn-primary py-2 px-8">Entendido</button>
+        <div class="controls-container" id="wizard-container">
+            <!-- El contenido del asistente se inyectará aquí -->
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- Elementos del DOM ---
+            const splashScreen = document.getElementById('splash-screen');
+            const loginModal = document.getElementById('login-modal');
+            const googleLoginBtn = document.getElementById('google-login-btn');
+            const mainAppContainer = document.querySelector('.main-app-container');
+            const ticketFlipper = document.getElementById('ticket-flipper');
+            const wizardContainer = document.getElementById('wizard-container');
+            const canvas = document.getElementById('particle-canvas');
+            const ctx = canvas.getContext('2d');
+            let animationFrameId;
+
+            // --- Lógica de la Splash Screen ---
+            function initAndRunSplash() {
+                if (!splashScreen) return;
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                let startTime = null;
+
+                function animateSplash(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const elapsedTime = timestamp - startTime;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    if (elapsedTime < 1500) {
+                        animationFrameId = requestAnimationFrame(animateSplash);
+                    } else {
+                        splashScreen.classList.add('hidden');
+                        // En lugar de mostrar la app, muestra la modal de login
+                        loginModal.classList.add('visible');
+                    }
+                }
+                animationFrameId = requestAnimationFrame(animateSplash);
+            }
+            initAndRunSplash();
+
+            // --- Configuración de Firebase ---
+            const firebaseConfig = {
+                apiKey: "AIzaSyB1W2yLlVHivzBQPZJVOgpApQeYnJUFzCs",
+                authDomain: "vitreumucuencahub.firebaseapp.com",
+                projectId: "vitreumucuencahub",
+                storageBucket: "vitreumucuencahub.firebasestorage.app",
+                messagingSenderId: "628136581064",
+                appId: "1:6281365-4602fd2fd"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const provider = new firebase.auth.GoogleAuthProvider();
+
+            // --- Estado del Asistente ---
+            let currentStep = 0;
+            const userData = {
+                uid: null, email: null, firstName: '', lastName: '', displayName: '',
+                nickname: '', photoURL: null, isContinuous: true, major: 'educacion-basica',
+                cycle: '1', modality: 'matutino', useAI: true
+            };
+
+            // --- Funciones del Asistente ---
+            const steps = [
+                // El paso 0 se elimina, ya que ahora lo maneja la modal
+                {
+                    title: "Confirma tus Nombres y Apellidos",
+                    render: () => `
+                        <input type="text" id="firstName" class="wizard-input" placeholder="Nombres" value="${userData.firstName || ''}" required>
+                        <input type="text" id="lastName" class="wizard-input" placeholder="Apellidos" value="${userData.lastName || ''}" required>
+                        <button class="wizard-btn">Siguiente</button>`,
+                    attachListener: () => wizardContainer.querySelector('button').addEventListener('click', () => {
+                        const firstName = document.getElementById('firstName').value.trim();
+                        const lastName = document.getElementById('lastName').value.trim();
+                        if (firstName && lastName) {
+                            saveNameStep(firstName, lastName);
+                        } else {
+                            alert('Por favor, completa ambos campos.');
+                        }
+                    })
+                },
+                {
+                    title: "Selecciona tu Carrera",
+                    render: () => `
+                        <select id="major" class="wizard-select">
+                            <option value="periodismo">Periodismo</option>
+                            <option value="educacion-basica" selected>E. Básica</option>
+                            <option value="educacion-inicial">E. Inicial</option>
+                            <option value="filosofia">Filosofía</option>
+                        </select>
+                        <button class="wizard-btn">Siguiente</button>`,
+                    attachListener: () => wizardContainer.querySelector('button').addEventListener('click', () => saveStep('major'))
+                },
+                {
+                    title: "Selecciona tu Ciclo",
+                    render: () => `
+                        <select id="cycle" class="wizard-select">
+                            ${[...Array(8).keys()].map(i => `<option value="${i+1}" ${i===0 ? 'selected' : ''}>Ciclo ${i+1}</option>`).join('')}
+                        </select>
+                        <button class="wizard-btn">Siguiente</button>`,
+                    attachListener: () => wizardContainer.querySelector('button').addEventListener('click', () => saveStep('cycle'))
+                },
+                {
+                    title: "Selecciona tu Modalidad",
+                    render: () => `
+                        <select id="modality" class="wizard-select">
+                            <option value="matutino" selected>Matutina</option>
+                            <option value="vespertino">Vespertina</option>
+                        </select>
+                        <button class="wizard-btn">Siguiente</button>`,
+                    attachListener: () => wizardContainer.querySelector('button').addEventListener('click', () => saveStep('modality'))
+                },
+                {
+                    title: "¿Eres estudiante continuo?",
+                    render: () => `
+                        <div class="wizard-options">
+                            <button class="wizard-btn" data-value="true">Sí, lo soy</button>
+                            <button class="wizard-btn" data-value="false">No, soy nuevo</button>
+                        </div>`,
+                    attachListener: () => wizardContainer.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => saveStep('isContinuous', e.target.dataset.value === 'true')))
+                },
+                {
+                    title: "¿Deseas autocompletar tu horario con IA?",
+                    render: () => `
+                        <div class="wizard-options">
+                            <button class="wizard-btn" data-value="true">Sí, por favor</button>
+                            <button class="wizard-btn" data-value="false">No, gracias</button>
+                        </div>`,
+                    attachListener: () => wizardContainer.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => saveStep('useAI', e.target.dataset.value === 'true')))
+                },
+                {
+                    title: "¡Todo Listo!",
+                    render: () => `<button class="wizard-btn">Finalizar Configuración y Entrar</button>`,
+                    attachListener: () => wizardContainer.querySelector('button').addEventListener('click', finalizeConfiguration)
+                }
+            ];
+
+            function renderWizardStep() {
+                if (currentStep >= steps.length) return;
+                const step = steps[currentStep];
+                wizardContainer.innerHTML = `
+                    <div class="wizard-step">
+                        <div class="wizard-title">${step.title}</div>
+                        ${step.render()}
+                    </div>`;
+                step.attachListener();
+            }
+
+            function saveNameStep(firstName, lastName) {
+                userData.firstName = firstName;
+                userData.lastName = lastName;
+                userData.displayName = `${firstName} ${lastName}`;
+                updateTicketDisplay('displayName');
+                currentStep++;
+                renderWizardStep();
+            }
+
+            function saveStep(field, value = null) {
+                const input = document.getElementById(field);
+                userData[field] = value !== null ? value : input.value;
+                
+                updateTicketDisplay(field);
+
+                currentStep++;
+                renderWizardStep();
+            }
+            
+            function triggerRefreshAnimation(element) {
+                if (!element || element.classList.contains('refresh-cover') || element.classList.contains('refresh-reveal')) return;
+                element.classList.add('text-to-refresh', 'refresh-cover');
+                setTimeout(() => {
+                    element.classList.remove('refresh-cover');
+                    element.classList.add('refresh-reveal');
+                    setTimeout(() => element.classList.remove('refresh-reveal', 'text-to-refresh'), 500);
+                }, 450);
+            }
+
+            function updateTicketDisplay(field) {
+                const animations = [];
+                if (field === 'displayName') {
+                    const el = document.getElementById('ticket-displayName');
+                    el.textContent = userData.displayName.toUpperCase();
+                    animations.push(el);
+                }
+                if (field === 'major') {
+                    const el = document.getElementById('ticket-major');
+                    const majorText = {
+                        'periodismo': 'Periodismo', 'educacion-basica': 'E. Básica',
+                        'educacion-inicial': 'E. Inicial', 'filosofia': 'Filosofía'
+                    };
+                    el.textContent = `Carrera de ${majorText[userData.major] || '#######'}`;
+                    animations.push(el);
+                }
+                if (field === 'cycle' || field === 'modality') {
+                    const el = document.getElementById('ticket-cycle-modality');
+                    el.textContent = `${userData.cycle}° CICLO, MODALIDAD: ${userData.modality.toUpperCase()}`;
+                    animations.push(el);
+                }
+                animations.forEach((el, index) => {
+                    setTimeout(() => triggerRefreshAnimation(el), index * 100);
+                });
+            }
+
+            function finalizeConfiguration() {
+                if (ticketFlipper.classList.contains('is-spinning')) return;
+                ticketFlipper.classList.add('is-spinning');
+                ticketFlipper.addEventListener('animationend', () => {
+                    const finalJson = JSON.stringify(userData);
+                    const base64String = btoa(finalJson);
+                    const targetUrl = `http://127.0.0.1:5500/index.html?userData=${encodeURIComponent(base64String)}`;
+                    console.log("Redirigiendo a:", targetUrl);
+                    console.log("Datos enviados (decodificados):", userData);
+                    window.location.href = targetUrl;
+                }, { once: true });
+            }
+
+            function signInWithGoogle() {
+                auth.signInWithPopup(provider).catch(error => {
+                    console.error("Error de autenticación:", error);
+                    alert("Error al iniciar sesión: " + error.message);
+                });
+            }
+            
+            googleLoginBtn.addEventListener('click', signInWithGoogle);
+
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    if (!user.email.endsWith('@ucuenca.edu.ec')) {
+                        alert('Acceso denegado. Debes usar una cuenta de correo institucional (@ucuenca.edu.ec).');
+                        auth.signOut();
+                        return;
+                    }
+                    
+                    // Ocultar modal y mostrar la app
+                    loginModal.classList.remove('visible');
+                    mainAppContainer.classList.add('visible');
+
+                    const nameParts = user.displayName.split(' ');
+                    userData.lastName = nameParts.pop() || '';
+                    userData.firstName = nameParts.join(' ');
+                    userData.email = user.email;
+                    userData.uid = user.uid;
+                    userData.photoURL = user.photoURL;
+                    document.getElementById('ticket-photo').src = user.photoURL || 'https://i.pinimg.com/736x/69/38/e4/6938e42485cf0eaf14ac0e9848fd0e0f.jpg';
+                    
+                    // Iniciar el asistente desde el primer paso
+                    currentStep = 0;
+                    renderWizardStep();
+                    
+                } else {
+                    // Si no hay usuario, asegurarse de que la modal de login esté visible
+                    mainAppContainer.classList.remove('visible');
+                    loginModal.classList.add('visible');
+                }
+            });
+
+            // --- Efectos visuales del Ticket ---
+            const ticketScene = document.getElementById('ticket-scene');
+            ticketScene.addEventListener('mousemove', (e) => {
+                const rect = ticketScene.getBoundingClientRect();
+                const x = e.clientX - rect.left, y = e.clientY - rect.top;
+                const centerX = rect.width / 2, centerY = rect.height / 2;
+                const rotateX = (y - centerY) / 25, rotateY = -(x - centerX) / 25;
+                ticketFlipper.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            });
+            ticketScene.addEventListener('mouseleave', () => {
+                ticketFlipper.style.transition = 'transform 0.5s ease-in-out';
+                ticketFlipper.style.transform = ``;
+            });
+            ticketScene.addEventListener('mouseenter', () => {
+                ticketFlipper.style.transition = 'transform 0.1s ease';
+            });
+            
+            // --- Estrellas de fondo ---
+            const bgStars = [];
+            for (let i = 0; i < 60; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star-bg');
+                const size = Math.random() * 2 + 1;
+                star.style.cssText = `width:${size}px; height:${size}px; top:${Math.random()*100}%; left:${Math.random()*100}%; animation-delay:${Math.random()*5}s;`;
+                star.dataset.depth = Math.random() * 0.4 + 0.1;
+                document.body.appendChild(star);
+                bgStars.push(star);
+            }
+            document.body.addEventListener('mousemove', (e) => {
+                const moveX = (e.clientX - window.innerWidth / 2);
+                const moveY = (e.clientY - window.innerHeight / 2);
+                bgStars.forEach(star => {
+                    const depth = star.dataset.depth;
+                    const offsetX = -(moveX * depth) / 100;
+                    const offsetY = -(moveY * depth) / 100;
+                    star.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+                });
+            });
+        });
+    </script>
+
 </body>
 </html>
-
